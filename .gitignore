@@ -1,0 +1,22 @@
+
+# Archivos generados por Ant
+/build/
+/dist/
+
+# Archivos compilados y registros
+*.class
+*.log
+hs_err_pid*
+
+# Configuracion privada de NetBeans
+/nbproject/private/
+
+# Variables de entorno y secretos
+.env
+.env.*
+!.env.example
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+

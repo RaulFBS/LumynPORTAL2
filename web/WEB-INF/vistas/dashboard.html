@@ -1,0 +1,505 @@
+
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Panel principal | LUMYN</title>
+        <link rel="stylesheet" href="css/styles.css">
+    </head>
+
+    <body>
+        <div class="app-layout">
+
+            <aside class="sidebar">
+                <a href="dashboard" class="sidebar-logo">
+                    LUM<span>Y</span>N
+                </a>
+
+                <div class="sidebar-label">Principal</div>
+
+                <nav id="sidebarNavigation"></nav>
+
+                <div class="sidebar-bottom">
+                    <div class="user-mini">
+                        <div class="avatar" id="userAvatar">LU</div>
+
+                        <div>
+                            <strong id="sidebarUserName">Usuario</strong>
+                            <small id="sidebarUserRole">Rol</small>
+                        </div>
+                    </div>
+
+                    <a href="logout" class="nav-link" id="logoutButton">
+                        <span class="nav-icon">↪</span>
+                        Cerrar sesión
+                    </a>
+                </div>
+            </aside>
+
+            <main class="main-area">
+
+                <header class="topbar">
+                    <div class="breadcrumb">
+                        LUMYN / <strong>Panel principal</strong>
+                    </div>
+
+                    <div class="topbar-right">
+                        <span class="date-label" id="currentDate"></span>
+
+                        <button class="notification-button"
+                                type="button"
+                                title="Notificaciones"
+                                onclick="showNotice(event)">
+                            ♧
+                        </button>
+
+                        <div class="avatar" id="topbarAvatar">LU</div>
+                    </div>
+                </header>
+
+                <section class="content">
+
+                    <div class="role-switch">
+                        <strong>Vista de demostración:</strong>
+
+                        <label for="rolePreview">Cambiar rol</label>
+
+                        <select class="form-control" id="rolePreview" disabled>
+                            <option value="ADMINISTRADOR">Administrador</option>
+                            <option value="GESTOR">Gestor</option>
+                            <option value="COLABORADOR">Colaborador</option>
+                            <option value="REVISOR">Revisor</option>
+                        </select>
+                    </div>
+
+                    <div class="page-heading">
+                        <div>
+                            <div class="welcome-tag">Espacio de trabajo LUMYN</div>
+                            <h1 id="welcomeTitle">Bienvenido</h1>
+                            <p id="welcomeDescription">
+                                Resumen general de tus actividades.
+                            </p>
+                        </div>
+
+                        <button class="btn btn-primary"
+                                id="mainAction"
+                                type="button"
+                                onclick="handleMainAction()">
+                            + Nuevo proyecto
+                        </button>
+                    </div>
+
+                    <div class="grid-stats" id="statsGrid"></div>
+
+                    <div class="dashboard-grid">
+
+                        <section class="card">
+                            <div class="card-heading">
+                                <h3 id="mainCardTitle">Proyectos recientes</h3>
+                                <a href="#" onclick="showNotice(event)">Ver todos →</a>
+                            </div>
+
+                            <div id="projectList"></div>
+                        </section>
+
+                        <section class="card">
+                            <div class="card-heading">
+                                <h3 id="activityTitle">Actividad reciente</h3>
+                            </div>
+
+                            <div id="activityList"></div>
+                        </section>
+
+                    </div>
+                </section>
+            </main>
+        </div>
+
+        <script>
+            "use strict";
+
+            const ROLE_NAMES = {
+                ADMINISTRADOR: "Administrador",
+                GESTOR: "Gestor de proyectos",
+                COLABORADOR: "Colaborador",
+                REVISOR: "Revisor"
+            };
+
+            const ROLE_IDS = {
+                1: "ADMINISTRADOR",
+                2: "GESTOR",
+                3: "COLABORADOR",
+                4: "REVISOR"
+            };
+
+            let rolAutenticado = null;
+            let nombreAutenticado = "Usuario";
+            let vistaActual = null;
+
+            const roleMenus = {
+                ADMINISTRADOR: [
+                    {label: "Panel principal", icon: "▦", href: "dashboard"},
+                    {label: "Usuarios y roles", icon: "♙", href: "usuarios"},
+                    {label: "Seguridad", icon: "◇", action: "seguridad"},
+                    {label: "Clientes", icon: "♧", href: "clientes"},
+                    {label: "Proyectos", icon: "▣", href: "proyectos"},
+                    {label: "Tareas", icon: "☷", action: "tareas"},
+                    {label: "Entregables", icon: "▤", action: "entregables"},
+                    {label: "Reportes", icon: "▥", action: "reportes"}
+                ],
+
+                GESTOR: [
+                    {label: "Panel principal", icon: "▦", href: "dashboard"},
+                    {label: "Clientes", icon: "♧", href: "clientes"},
+                    {label: "Proyectos", icon: "▣", href: "proyectos"},
+                    {label: "Tareas", icon: "☷", action: "tareas"},
+                    {label: "Entregables", icon: "▤", action: "entregables"},
+                    {label: "Reportes", icon: "▥", action: "reportes"}
+                ],
+
+                COLABORADOR: [
+                    {label: "Panel principal", icon: "▦", href: "dashboard"},
+                    {label: "Mis tareas", icon: "☷", action: "tareas"},
+                    {label: "Entregables", icon: "▤", action: "entregables"},
+                    {label: "Notificaciones", icon: "♧", action: "notificaciones"}
+                ],
+
+                REVISOR: [
+                    {label: "Panel principal", icon: "▦", href: "dashboard"},
+                    {label: "Proyectos", icon: "▣", action: "proyectos"},
+                    {label: "Revisión de entregables", icon: "▤", action: "entregables"},
+                    {label: "Observaciones", icon: "☷", action: "observaciones"}
+                ]
+            };
+
+            const roleData = {
+                ADMINISTRADOR: {
+                    title: "Panel de administración",
+                    description: "Supervisa los usuarios, clientes y proyectos de LUMYN.",
+                    action: "+ Nuevo proyecto",
+                    stats: [
+                        ["Usuarios", "12", "Cuentas registradas", "♙"],
+                        ["Clientes", "08", "Clientes activos", "♧"],
+                        ["Proyectos", "06", "Proyectos registrados", "▣"],
+                        ["Tareas pendientes", "14", "Por completar", "☷"]
+                    ],
+                    projects: [
+                        ["Rediseño web corporativo", "Cliente: Empresa Demo", 75, "EN PROGRESO"],
+                        ["Portal de servicios", "Cliente: Negocio Demo", 40, "EN PROGRESO"],
+                        ["Actualización de landing page", "Cliente: Cliente Demo", 100, "COMPLETADO"]
+                    ]
+                },
+
+                GESTOR: {
+                    title: "Panel de proyectos",
+                    description: "Organiza los proyectos, asigna responsabilidades y revisa avances.",
+                    action: "+ Nuevo proyecto",
+                    stats: [
+                        ["Mis proyectos", "06", "Proyectos asignados", "▣"],
+                        ["En progreso", "04", "Activos actualmente", "↗"],
+                        ["Tareas pendientes", "14", "Requieren seguimiento", "☷"],
+                        ["Próximos vencimientos", "03", "Revisar fechas", "◷"]
+                    ],
+                    projects: [
+                        ["Rediseño web corporativo", "Cliente: Empresa Demo", 75, "EN PROGRESO"],
+                        ["Portal de servicios", "Cliente: Negocio Demo", 40, "EN PROGRESO"],
+                        ["Actualización de landing page", "Cliente: Cliente Demo", 100, "COMPLETADO"]
+                    ]
+                },
+
+                COLABORADOR: {
+                    title: "Mi espacio de trabajo",
+                    description: "Consulta tus tareas asignadas y registra el avance de tu trabajo.",
+                    action: "Ver mis tareas",
+                    stats: [
+                        ["Mis tareas", "08", "Tareas asignadas", "☷"],
+                        ["En progreso", "03", "En ejecución", "↗"],
+                        ["Por completar", "04", "Pendientes", "◷"],
+                        ["Entregables", "02", "Por revisar", "▤"]
+                    ],
+                    projects: [
+                        ["Diseño de página principal", "Proyecto: Rediseño web", 70, "EN PROGRESO"],
+                        ["Formulario de contacto", "Proyecto: Portal de servicios", 50, "EN PROGRESO"],
+                        ["Pruebas de interfaz", "Proyecto: Landing page", 100, "COMPLETADO"]
+                    ]
+                },
+
+                REVISOR: {
+                    title: "Panel de revisión",
+                    description: "Verifica los entregables y consulta las observaciones pendientes.",
+                    action: "Revisar entregables",
+                    stats: [
+                        ["Por revisar", "05", "Entregables pendientes", "▤"],
+                        ["Aprobados", "12", "Entregables validados", "✓"],
+                        ["Observados", "02", "Requieren correcciones", "◇"],
+                        ["Proyectos activos", "04", "En seguimiento", "▣"]
+                    ],
+                    projects: [
+                        ["Página principal", "Proyecto: Rediseño web", 100, "POR REVISAR"],
+                        ["Diseño del portal", "Proyecto: Portal de servicios", 65, "EN PROGRESO"],
+                        ["Formulario de contacto", "Proyecto: Landing page", 100, "POR REVISAR"]
+                    ]
+                }
+            };
+
+            const roleActivities = {
+                ADMINISTRADOR: [
+                    ["Gestión del sistema", "Consulta la actividad general del portal."],
+                    ["Usuarios y roles", "Supervisa las cuentas registradas."],
+                    ["Proyectos", "Consulta el estado de los proyectos."]
+                ],
+                GESTOR: [
+                    ["Seguimiento de proyectos", "Consulta el avance de tus proyectos."],
+                    ["Tareas", "Revisa las tareas pendientes."],
+                    ["Entregables", "Realiza el seguimiento de las entregas."]
+                ],
+                COLABORADOR: [
+                    ["Mis tareas", "Consulta las tareas asignadas."],
+                    ["Avance de trabajo", "Revisa el progreso de tus actividades."],
+                    ["Entregables", "Consulta tus entregas."]
+                ],
+                REVISOR: [
+                    ["Entregables pendientes", "Consulta los elementos por revisar."],
+                    ["Revisiones", "Realiza el seguimiento de las revisiones."],
+                    ["Observaciones", "Consulta las correcciones pendientes."]
+                ]
+            };
+
+            function initials(name) {
+                return String(name || "")
+                        .trim()
+                        .split(/\s+/)
+                        .filter(Boolean)
+                        .slice(0, 2)
+                        .map(word => word[0].toUpperCase())
+                        .join("") || "LU";
+            }
+
+            function showToast(message) {
+                const existing = document.querySelector(".toast");
+
+                if (existing) {
+                    existing.remove();
+                }
+
+                const toast = document.createElement("div");
+                toast.className = "toast";
+                toast.textContent = message;
+                document.body.appendChild(toast);
+
+                setTimeout(() => toast.remove(), 3000);
+            }
+
+            function showNotice(event) {
+                if (event) {
+                    event.preventDefault();
+                }
+
+                showToast("Este módulo se implementará posteriormente.");
+            }
+
+            function handleMainAction() {
+                const role = vistaActual;
+
+                if (role === "COLABORADOR") {
+                    showToast("El módulo de tareas se conectará próximamente.");
+                } else if (role === "REVISOR") {
+                    showToast("El módulo de revisión se conectará próximamente.");
+                } else {
+                    showToast("Esta acción se conectará con el módulo correspondiente.");
+                }
+            }
+
+            function renderDashboard(role) {
+                const data = roleData[role];
+
+                if (!data || !roleMenus[role]) {
+                    console.error("Rol no reconocido:", role);
+                    return;
+                }
+
+                vistaActual = role;
+
+                document.getElementById("sidebarUserName").textContent =
+                        nombreAutenticado;
+
+                document.getElementById("sidebarUserRole").textContent =
+                        ROLE_NAMES[rolAutenticado];
+
+                document.getElementById("userAvatar").textContent =
+                        initials(nombreAutenticado);
+
+                document.getElementById("topbarAvatar").textContent =
+                        initials(nombreAutenticado);
+
+                document.getElementById("welcomeTitle").textContent =
+                        "Hola, " + nombreAutenticado + ".";
+
+                document.getElementById("welcomeDescription").textContent =
+                        data.description;
+
+                document.getElementById("mainAction").textContent =
+                        data.action;
+
+                document.getElementById("currentDate").textContent =
+                        new Intl.DateTimeFormat("es-PE", {
+                            dateStyle: "medium"
+                        }).format(new Date());
+
+                // Menú lateral.
+                const nav = document.getElementById("sidebarNavigation");
+
+                nav.innerHTML = roleMenus[role].map((item, index) => `
+                    <a class="nav-link ${index === 0 ? "active" : ""}"
+                       href="${item.href || "#"}"
+                       ${item.action ? `data-action="${item.action}"` : ""}>
+                        <span class="nav-icon">${item.icon}</span>
+                        ${item.label}
+                    </a>
+                `).join("");
+
+                nav.querySelectorAll("[data-action]").forEach(link => {
+                    link.addEventListener("click", function (event) {
+                        event.preventDefault();
+
+                        showToast(
+                                "El módulo " + this.textContent.trim() +
+                                " se conectará en la siguiente etapa."
+                                );
+                    });
+                });
+
+                // Tarjetas de resumen.
+                document.getElementById("statsGrid").innerHTML =
+                        data.stats.map(item => `
+                        <div class="stat-card">
+                            <div class="stat-symbol">${item[3]}</div>
+                            <div class="stat-title">${item[0]}</div>
+                            <div class="stat-value">${item[1]}</div>
+                            <div class="stat-foot">${item[2]}</div>
+                        </div>
+                    `).join("");
+
+                // Proyectos.
+                document.getElementById("projectList").innerHTML =
+                        data.projects.map(project => {
+                            const badgeClass =
+                                    project[3] === "COMPLETADO" ? "badge-green" :
+                                    project[3] === "POR REVISAR" ? "badge-yellow" :
+                                    "badge-gray";
+
+                            return `
+                            <div class="project-item">
+                                <div class="project-info">
+                                    <div>
+                                        <strong>${project[0]}</strong>
+                                        <p>${project[1]}</p>
+                                    </div>
+
+                                    <span class="badge ${badgeClass}">
+                                        ${project[3]}
+                                    </span>
+                                </div>
+
+                                <div class="progress">
+                                    <div class="progress-bar"
+                                         style="width:${project[2]}%"></div>
+                                </div>
+
+                                <p class="stat-foot">
+                                    ${project[2]} % completado
+                                </p>
+                            </div>
+                        `;
+                        }).join("");
+
+                // Actividades según el rol.
+                document.getElementById("activityList").innerHTML =
+                        roleActivities[role].map(item => `
+                        <div class="activity-item">
+                            <span class="activity-dot"></span>
+                            <div>
+                                <strong>${item[0]}</strong>
+                                <p>${item[1]}</p>
+                            </div>
+                        </div>
+                    `).join("");
+
+                // El selector muestra el rol autenticado.
+                document.getElementById("rolePreview").value = rolAutenticado;
+            }
+
+            async function cargarSesion() {
+                const selector = document.getElementById("rolePreview");
+
+                try {
+                    const respuesta = await fetch("api/sesion", {
+                        method: "GET",
+                        credentials: "same-origin",
+                        headers: {
+                            "Accept": "application/json"
+                        }
+                    });
+
+                    if (respuesta.status === 401 || respuesta.status === 403) {
+                        window.location.href = "login";
+                        return;
+                    }
+
+                    if (!respuesta.ok) {
+                        throw new Error("No se pudo verificar la sesión.");
+                    }
+
+                    const sesion = await respuesta.json();
+
+                    if (!sesion.autenticado) {
+                        window.location.href = "login";
+                        return;
+                    }
+
+                    const rol = ROLE_IDS[Number(sesion.rolId)];
+
+                    if (!rol) {
+                        throw new Error("El servidor devolvió un rol no válido.");
+                    }
+
+                    rolAutenticado = rol;
+                    nombreAutenticado = sesion.nombreUsuario || "Usuario";
+
+                    // Mostrar primero el rol real de la cuenta.
+                    selector.value = rolAutenticado;
+                    renderDashboard(rolAutenticado);
+
+                    /*
+                     * Vista de demostración:
+                     * solo cambia la presentación del dashboard.
+                     * No modifica el rol ni los permisos del servidor.
+                     */
+                    selector.disabled = false;
+
+                    selector.addEventListener("change", function () {
+                        renderDashboard(this.value);
+                    });
+
+                } catch (error) {
+                    console.error("Error al cargar la sesión:", error);
+                    showToast("No se pudo cargar la información de tu sesión.");
+                }
+            }
+
+            document.addEventListener("DOMContentLoaded", function () {
+                cargarSesion();
+            });
+
+            document.getElementById("logoutButton").addEventListener(
+                    "click",
+                    function (event) {
+                        // Permite que el enlace logout gestione el cierre de sesión.
+                        // No se limpia sessionStorage para no borrar datos ajenos
+                        // a la demostración ni interferir con otras funcionalidades.
+                    }
+            );
+        </script>
+    </body>
+</html>
