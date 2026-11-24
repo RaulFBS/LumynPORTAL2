@@ -191,8 +191,9 @@ select:focus-visible {
     position: relative;
 }
 
-.input-wrap input {
-    padding-left: 42px;
+.input-wrap input,
+.input-wrap input.form-control {
+    padding: 13px 14px 13px 42px;
 }
 
 .input-icon {
@@ -202,6 +203,7 @@ select:focus-visible {
     transform: translateY(-50%);
     color: #888888;
     font-size: 14px;
+    pointer-events: none;
 }
 
 .form-control {
