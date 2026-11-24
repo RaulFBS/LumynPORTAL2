@@ -14,6 +14,22 @@ public class PortalEventManager {
     private PortalEventManager() {
         observadores.add(new AuditoriaLogObserver());
         observadores.add(new NotificacionComercialObserver());
+        cargarNotificacionesIniciales();
+    }
+
+    private void cargarNotificacionesIniciales() {
+        notificar(new PortalEvent("PROYECTO_ACTUALIZADO", 101, 1,
+                "Proyecto 'Campaña Q4 Horizonte Sur' pasó a estado en_progreso."));
+        notificar(new PortalEvent("TAREA_COMPLETADA", 204, 3,
+                "Tarea 'Diseño de piezas digitales' marcada como completada."));
+        notificar(new PortalEvent("ENTREGABLE_SUBIDO", 308, 3,
+                "Nuevo entregable cargado para revisión: Propuesta_Final_v2.pdf."));
+        notificar(new PortalEvent("SOLPED_APROBADA", 11, 2,
+                "SOLPED aprobada para Marisquería E.I.R.L. (S/ 2,250.00)."));
+        notificar(new PortalEvent("SOLPED_CREADA", 12, 2,
+                "Nueva solicitud SOLPED registrada para Horizonte Sur S.A.C. (S/ 4,500.00)."));
+        notificar(new PortalEvent("VENTA_REGISTRADA", 8, 2,
+                "Venta facturada por S/ 7,850.00 vinculada al proyecto Horizonte Sur."));
     }
 
     public static synchronized PortalEventManager getInstancia() {

@@ -1,4 +1,5 @@
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
+<%@page import="java.time.format.DateTimeFormatter"%>
 <%@page import="java.util.List"%>
 <%@page import="pe.lumyn.portal.observer.PortalEvent"%>
 <%!
@@ -15,6 +16,7 @@
     String nombreUsuario = (String) request.getAttribute("nombreUsuario");
     List<String> alertas = (List<String>) request.getAttribute("alertasComerciales");
     List<PortalEvent> eventos = (List<PortalEvent>) request.getAttribute("historialEventos");
+    DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 %>
 <!DOCTYPE html>
 <html lang="es">
@@ -71,13 +73,19 @@
                     <h1>Centro de Notificaciones</h1>
                     <p>Alertas comerciales y eventos operativos emitidos en tiempo real.</p>
                 </div>
+                <form method="post" action="<%= contexto %>/notificaciones">
+                    <button type="submit" class="btn btn-outline">+ Simular notificación</button>
+                </form>
             </div>
 
             <div class="card" style="margin-bottom:20px;">
                 <h3 style="margin-top:0;">Alertas comerciales (SOLPED / Ventas)</h3>
                 <% if (alertas != null && !alertas.isEmpty()) {
                     for (String a : alertas) { %>
-                <div class="activity-item"><div class="activity-dot"></div><div><strong><%= esc(a) %></strong></div></div>
+                <div class="activity-item">
+                    <div class="activity-dot"></div>
+                    <div><strong style="font-size:13px;"><%= esc(a) %></strong></div>
+                </div>
                 <% } } else { %>
                 <p>No hay alertas comerciales recientes en esta sesión.</p>
                 <% } %>
@@ -86,12 +94,13 @@
             <div class="card">
                 <h3 style="margin-top:0;">Actividad reciente del sistema</h3>
                 <% if (eventos != null && !eventos.isEmpty()) {
-                    for (PortalEvent ev : eventos) { %>
+                    for (PortalEvent ev : eventos) {
+                        String fechaStr = ev.getFechaHora() != null ? ev.getFechaHora().format(fmt) : ""; %>
                 <div class="activity-item">
                     <div class="activity-dot"></div>
                     <div>
-                        <strong><%= esc(ev.getTipo()) %> (#<%= ev.getEntidadId() %>)</strong>
-                        <p><%= esc(ev.getDetalle()) %> — <%= esc(ev.getFechaHora()) %></p>
+                        <strong style="font-size:13px;"><%= esc(ev.getTipo()) %> (#<%= ev.getEntidadId() %>)</strong>
+                        <p style="font-size:12px;"><%= esc(ev.getDetalle()) %> — <%= esc(fechaStr) %></p>
                     </div>
                 </div>
                 <% } } else { %>
