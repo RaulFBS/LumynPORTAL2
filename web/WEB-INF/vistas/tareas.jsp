@@ -15,6 +15,20 @@
     Integer rolId = request.getAttribute("rolId") instanceof Number
             ? ((Number) request.getAttribute("rolId")).intValue() : 0;
     String nombreUsuario = (String) request.getAttribute("nombreUsuario");
+    if (nombreUsuario == null || nombreUsuario.isBlank()) {
+        nombreUsuario = "Usuario Lumyn";
+    }
+    String rolNombre = switch (rolId) {
+        case 1 -> "Administrador";
+        case 2 -> "Gestor";
+        case 3 -> "Colaborador";
+        case 4 -> "Revisor";
+        default -> "Usuario";
+    };
+    String[] partesNombre = nombreUsuario.trim().split("\\s+");
+    String iniciales = partesNombre.length >= 2
+            ? (partesNombre[0].substring(0, 1) + partesNombre[partesNombre.length - 1].substring(0, 1)).toUpperCase()
+            : (!nombreUsuario.trim().isEmpty() ? nombreUsuario.trim().substring(0, 1).toUpperCase() : "UL");
     List<Tarea> tareas = (List<Tarea>) request.getAttribute("tareas");
     List<Proyecto> proyectos = (List<Proyecto>) request.getAttribute("proyectos");
     List<Usuario> usuarios = (List<Usuario>) request.getAttribute("usuarios");
@@ -61,7 +75,13 @@
             <% } %>
         </nav>
         <div class="sidebar-bottom">
-            <div class="user-mini"><div><strong><%= esc(nombreUsuario) %></strong></div></div>
+            <div class="user-mini">
+                <div class="avatar"><%= esc(iniciales) %></div>
+                <div>
+                    <strong><%= esc(nombreUsuario) %></strong>
+                    <small><%= esc(rolNombre) %></small>
+                </div>
+            </div>
             <a href="<%= contexto %>/logout" class="nav-link"><span class="nav-icon">↪</span>Cerrar sesión</a>
         </div>
     </aside>

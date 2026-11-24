@@ -1329,3 +1329,80 @@ tbody tr:hover {
 .data-table a:hover {
     text-decoration: underline;
 }
+
+
+/* =========================
+   SIDEBAR ESTÉTICO (SIN BARRA NATIVA FEA)
+========================= */
+
+.sidebar {
+    padding: 20px 14px 16px;
+    overflow-y: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.sidebar::-webkit-scrollbar,
+.sidebar nav::-webkit-scrollbar {
+    display: none;
+}
+
+.sidebar nav {
+    overflow-y: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding-right: 0;
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+.sidebar-logo {
+    padding: 0 12px 16px;
+}
+
+.sidebar-label {
+    padding: 6px 12px 8px;
+}
+
+.sidebar .nav-link {
+    padding: 9px 12px;
+    margin-bottom: 2px;
+    font-size: 12.5px;
+}
+
+.sidebar .nav-link.active {
+    padding-left: 9px;
+}
+
+.sidebar-bottom {
+    padding-top: 14px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.sidebar .user-mini {
+    background: rgba(255, 255, 255, 0.045);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+}
+
+.sidebar .user-mini strong {
+    display: block;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #FFFFFF;
+    line-height: 1.25;
+}
+
+.sidebar .user-mini small {
+    display: inline-block;
+    margin-top: 4px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: rgba(217, 31, 38, 0.18);
+    color: #FF8A8E;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+}
