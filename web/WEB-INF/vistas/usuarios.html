@@ -8,6 +8,7 @@
 
     <base href="/">
     <link rel="stylesheet" href="css/styles.css">
+    <script src="js/pagination.js"></script>
 
     <style>
         #userModal[hidden],
@@ -605,7 +606,10 @@
             return await leerRespuesta(respuesta);
         }
 
-        // TABLA Y BÚSQUEDA
+        // TABLA, BÚSQUEDA Y PAGINACIÓN
+
+        let usersPage = 1;
+        let usersPageSize = 10;
 
         function renderUsers() {
             const query = document.getElementById("searchUsers")
@@ -621,6 +625,15 @@
                 );
             });
 
+            const totalPages = Math.max(1, Math.ceil(filtered.length / usersPageSize));
+            if (usersPage > totalPages) {
+                usersPage = totalPages;
+            }
+            const pageSlice = filtered.slice(
+                (usersPage - 1) * usersPageSize,
+                usersPage * usersPageSize
+            );
+
             const tbody = document.getElementById("usersTable");
 
             if (filtered.length === 0) {
@@ -634,7 +647,7 @@
                     </tr>
                 `;
             } else {
-                tbody.innerHTML = filtered.map(user => `
+                tbody.innerHTML = pageSlice.map(user => `
                     <tr>
                         <td>
                             <div class="person-cell">
@@ -692,9 +705,28 @@
                 `).join("");
             }
 
-            document.getElementById("tableCount").textContent =
-                "Mostrando " + filtered.length +
-                " de " + users.length + " usuarios";
+            const footer = document.getElementById("tableCount");
+            if (window.LumynPagination) {
+                window.LumynPagination.renderControls(footer, {
+                    totalItems: filtered.length,
+                    page: usersPage,
+                    pageSize: usersPageSize,
+                    label: "usuarios",
+                    onPageChange: function (newPage) {
+                        usersPage = newPage;
+                        renderUsers();
+                    },
+                    onPageSizeChange: function (newSize) {
+                        usersPageSize = newSize;
+                        usersPage = 1;
+                        renderUsers();
+                    }
+                });
+            } else {
+                footer.textContent =
+                    "Mostrando " + filtered.length +
+                    " de " + users.length + " usuarios";
+            }
 
             document.getElementById("totalUsers").textContent =
                 estadisticas.totalUsuarios;
@@ -867,7 +899,10 @@
         // INICIALIZACIÓN
 
         document.getElementById("searchUsers")
-            .addEventListener("input", renderUsers);
+            .addEventListener("input", function () {
+                usersPage = 1;
+                renderUsers();
+            });
 
         document.getElementById("pageDate").textContent =
             new Intl.DateTimeFormat("es-PE", {

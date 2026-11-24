@@ -121,6 +121,7 @@
 
         <base href="<%= ctx%>/">
         <link rel="stylesheet" href="css/styles.css">
+        <script src="js/pagination.js"></script>
 
         <style>
             #projectModal[hidden],
@@ -1085,42 +1086,27 @@
                         }
                     });
 
-            // BÚSQUEDA Y FILTRO
-            function filtrarProyectos() {
-                const busqueda = document.getElementById("searchProjects")
-                        .value.toLowerCase().trim();
-
-                const estadoSeleccionado =
-                        document.getElementById("filterStatus").value;
-
-                const filas = document.querySelectorAll(".project-row");
-                let visibles = 0;
-
-                filas.forEach(fila => {
-                    const texto = fila.dataset.search || "";
-                    const estado = fila.dataset.status || "";
-
-                    const coincideTexto = texto.includes(busqueda);
-                    const coincideEstado = !estadoSeleccionado
-                            || estado === estadoSeleccionado;
-
-                    const mostrar = coincideTexto && coincideEstado;
-
-                    fila.style.display = mostrar ? "" : "none";
-
-                    if (mostrar)
-                        visibles++;
-                });
-
-                document.getElementById("projectsCount").textContent =
-                        "Mostrando " + visibles + " de " + filas.length + " proyectos";
-            }
-
-            document.getElementById("searchProjects")
-                    .addEventListener("input", filtrarProyectos);
-
-            document.getElementById("filterStatus")
-                    .addEventListener("change", filtrarProyectos);
+            // BÚSQUEDA, FILTRO Y PAGINACIÓN
+            const projectsPager = window.LumynPagination
+                    ? window.LumynPagination.attachTable({
+                        tbody: "#projectsTableBody",
+                        rowSelector: ".project-row",
+                        footerEl: "#projectsCount",
+                        label: "proyectos",
+                        pageSize: 10,
+                        filterInputs: ["#searchProjects", "#filterStatus"],
+                        filterFn: function (fila) {
+                            const busqueda = document.getElementById("searchProjects")
+                                    .value.toLowerCase().trim();
+                            const estadoSeleccionado =
+                                    document.getElementById("filterStatus").value;
+                            const texto = fila.dataset.search || "";
+                            const estado = fila.dataset.status || "";
+                            return texto.includes(busqueda)
+                                    && (!estadoSeleccionado || estado === estadoSeleccionado);
+                        }
+                    })
+                    : null;
 
             function mostrarAviso(mensaje) {
                 const toast = document.createElement("div");

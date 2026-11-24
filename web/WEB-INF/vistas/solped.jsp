@@ -135,6 +135,7 @@
 
     <base href="<%= ctx %>/">
     <link rel="stylesheet" href="css/styles.css">
+    <script src="js/pagination.js"></script>
 
     <style>
         .solped-description {
@@ -876,36 +877,30 @@
                 dateStyle: "medium"
             }).format(new Date());
 
-    // BÚSQUEDA Y FILTRO
+    // BÚSQUEDA, FILTRO Y PAGINACIÓN
     const buscador = document.getElementById("buscarSolped");
     const filtroEstado = document.getElementById("filtroEstado");
-    const filas = document.querySelectorAll(".solped-row");
-    const contador = document.getElementById("solpedCount");
+    const solpedTbody = document.querySelector(".solped-row")
+            ? document.querySelector(".solped-row").closest("tbody")
+            : null;
 
-    function filtrarSolicitudes() {
-        const texto = buscador.value.toLowerCase().trim();
-        const estado = filtroEstado.value;
-        let visibles = 0;
-
-        filas.forEach(function (fila) {
-            const textoFila = fila.dataset.busqueda || "";
-            const estadoFila = fila.dataset.estado || "";
-
-            const coincideTexto = textoFila.includes(texto);
-            const coincideEstado = !estado || estadoFila === estado;
-            const mostrar = coincideTexto && coincideEstado;
-
-            fila.style.display = mostrar ? "" : "none";
-
-            if (mostrar) visibles++;
+    if (window.LumynPagination && solpedTbody) {
+        window.LumynPagination.attachTable({
+            tbody: solpedTbody,
+            rowSelector: ".solped-row",
+            footerEl: "#solpedCount",
+            label: "solicitudes",
+            pageSize: 10,
+            filterInputs: [buscador, filtroEstado],
+            filterFn: function (fila) {
+                const texto = buscador.value.toLowerCase().trim();
+                const estado = filtroEstado.value;
+                const textoFila = fila.dataset.busqueda || "";
+                const estadoFila = fila.dataset.estado || "";
+                return textoFila.includes(texto) && (!estado || estadoFila === estado);
+            }
         });
-
-        contador.textContent =
-                "Mostrando " + visibles + " de " + filas.length + " solicitudes";
     }
-
-    buscador.addEventListener("input", filtrarSolicitudes);
-    filtroEstado.addEventListener("change", filtrarSolicitudes);
 
     // RESULTADO DE LA OPERACIÓN
     const parametros = new URLSearchParams(window.location.search);

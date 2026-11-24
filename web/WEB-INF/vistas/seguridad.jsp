@@ -22,6 +22,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Seguridad y Auditoría | LUMYN</title>
     <link rel="stylesheet" href="<%= contexto %>/css/styles.css">
+    <script src="<%= contexto %>/js/pagination.js"></script>
 </head>
 <body>
 <div class="app-layout">
@@ -90,6 +91,7 @@
                         </tbody>
                     </table>
                 </div>
+                <div class="table-footer" id="seguridadUsuariosPagination"></div>
             </div>
 
             <div class="table-card">
@@ -97,7 +99,7 @@
                 <div class="table-scroll">
                     <table class="data-table">
                         <thead><tr><th>Tipo</th><th>Entidad</th><th>Usuario</th><th>Detalle</th><th>Fecha / Hora</th></tr></thead>
-                        <tbody>
+                        <tbody id="seguridadEventosBody">
                         <% if (historialEventos != null && !historialEventos.isEmpty()) {
                             for (PortalEvent ev : historialEventos) { %>
                         <tr>
@@ -113,9 +115,29 @@
                         </tbody>
                     </table>
                 </div>
+                <div class="table-footer" id="seguridadEventosPagination"></div>
             </div>
         </section>
     </main>
 </div>
+<script>
+    if (window.LumynPagination) {
+        const tablas = document.querySelectorAll(".data-table tbody");
+        if (tablas[0]) {
+            window.LumynPagination.attachTable({
+                tbody: tablas[0],
+                footerEl: "#seguridadUsuariosPagination",
+                label: "usuarios",
+                pageSize: 10
+            });
+        }
+        window.LumynPagination.attachTable({
+            tbody: "#seguridadEventosBody",
+            footerEl: "#seguridadEventosPagination",
+            label: "eventos",
+            pageSize: 10
+        });
+    }
+</script>
 </body>
 </html>

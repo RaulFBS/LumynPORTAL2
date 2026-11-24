@@ -127,6 +127,7 @@
 
     <base href="<%= ctx %>/">
     <link rel="stylesheet" href="css/styles.css">
+    <script src="js/pagination.js"></script>
 
     <style>
         .sale-description {
@@ -571,39 +572,26 @@
                     dateStyle: "medium"
                 }).format(new Date());
 
-        function filtrarVentas() {
-            const busqueda = document.getElementById("searchSales")
-                    .value.toLowerCase().trim();
-
-            const estadoSeleccionado =
-                    document.getElementById("filterSaleStatus").value;
-
-            const filas = document.querySelectorAll(".sale-row");
-            let visibles = 0;
-
-            filas.forEach(function (fila) {
-                const texto = fila.dataset.search || "";
-                const estado = fila.dataset.status || "";
-
-                const coincideTexto = texto.includes(busqueda);
-                const coincideEstado = !estadoSeleccionado
-                        || estado === estadoSeleccionado;
-
-                const mostrar = coincideTexto && coincideEstado;
-                fila.style.display = mostrar ? "" : "none";
-
-                if (mostrar) visibles++;
+        if (window.LumynPagination) {
+            window.LumynPagination.attachTable({
+                tbody: "#salesTableBody",
+                rowSelector: ".sale-row",
+                footerEl: "#salesCount",
+                label: "ventas",
+                pageSize: 10,
+                filterInputs: ["#searchSales", "#filterSaleStatus"],
+                filterFn: function (fila) {
+                    const busqueda = document.getElementById("searchSales")
+                            .value.toLowerCase().trim();
+                    const estadoSeleccionado =
+                            document.getElementById("filterSaleStatus").value;
+                    const texto = fila.dataset.search || "";
+                    const estado = fila.dataset.status || "";
+                    return texto.includes(busqueda)
+                            && (!estadoSeleccionado || estado === estadoSeleccionado);
+                }
             });
-
-            document.getElementById("salesCount").textContent =
-                    "Mostrando " + visibles + " de " + filas.length + " ventas";
         }
-
-        document.getElementById("searchSales")
-                .addEventListener("input", filtrarVentas);
-
-        document.getElementById("filterSaleStatus")
-                .addEventListener("change", filtrarVentas);
 
         function mostrarAviso(mensaje) {
             const toast = document.createElement("div");

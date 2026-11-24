@@ -22,6 +22,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Observaciones | LUMYN</title>
     <link rel="stylesheet" href="<%= contexto %>/css/styles.css">
+    <script src="<%= contexto %>/js/pagination.js"></script>
 </head>
 <body>
 <div class="app-layout">
@@ -93,9 +94,20 @@
                         </tbody>
                     </table>
                 </div>
+                <div class="table-footer" id="observacionesPagination"></div>
             </div>
         </section>
     </main>
 </div>
+<script>
+    if (window.LumynPagination) {
+        window.LumynPagination.attachTable({
+            tbody: ".data-table tbody",
+            footerEl: "#observacionesPagination",
+            label: "observaciones",
+            pageSize: 10
+        });
+    }
+</script>
 </body>
 </html>
