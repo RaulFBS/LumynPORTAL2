@@ -39,6 +39,7 @@ public class ReportesRepositoryImpl implements ReportesRepository {
 
             resumen.put("ventasPorMes", consultarVentasPorMes(conn));
             resumen.put("topClientes", consultarTopClientes(conn));
+            resumen.put("clienteMasRecurrente", consultarClienteMasRecurrente(conn));
         }
 
         return resumen;
@@ -302,5 +303,60 @@ public class ReportesRepositoryImpl implements ReportesRepository {
             }
         }
         return resultado;
+    }
+
+    private Map<String, Object> consultarClienteMasRecurrente(
+            Connection conn) throws SQLException {
+
+        String sql = """
+                SELECT c.cliente_id,
+                       c.nombre,
+                       c.documento,
+                       c.correo,
+                       COUNT(DISTINCT v.venta_id) AS total_ventas,
+                       COUNT(DISTINCT p.proyecto_id) AS total_proyectos,
+                       COUNT(DISTINCT s.solped_id) AS total_solped,
+                       COALESCE((
+                           SELECT SUM(v2.total)
+                           FROM ventas v2
+                           WHERE v2.cliente_id = c.cliente_id
+                             AND v2.estado <> 'anulada'
+                       ), 0) AS monto_facturado
+                FROM clientes c
+                LEFT JOIN ventas v
+                       ON c.cliente_id = v.cliente_id
+                      AND v.estado <> 'anulada'
+                LEFT JOIN proyectos p
+                       ON c.cliente_id = p.cliente_id
+                LEFT JOIN solped s
+                       ON c.cliente_id = s.cliente_id
+                GROUP BY c.cliente_id, c.nombre, c.documento, c.correo
+                HAVING (COUNT(DISTINCT v.venta_id)
+                      + COUNT(DISTINCT p.proyecto_id)
+                      + COUNT(DISTINCT s.solped_id)) > 0
+                ORDER BY total_ventas DESC,
+                         total_proyectos DESC,
+                         total_solped DESC,
+                         monto_facturado DESC
+                LIMIT 1
+                """;
+
+        try (PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                Map<String, Object> cliente = new LinkedHashMap<>();
+                cliente.put("clienteId", rs.getInt("cliente_id"));
+                cliente.put("nombre", rs.getString("nombre"));
+                cliente.put("documento", rs.getString("documento"));
+                cliente.put("correo", rs.getString("correo"));
+                cliente.put("totalVentas", rs.getInt("total_ventas"));
+                cliente.put("totalProyectos", rs.getInt("total_proyectos"));
+                cliente.put("totalSolped", rs.getInt("total_solped"));
+                BigDecimal monto = rs.getBigDecimal("monto_facturado");
+                cliente.put("montoFacturado", monto != null ? monto : BigDecimal.ZERO);
+                return cliente;
+            }
+        }
+        return null;
     }
 }

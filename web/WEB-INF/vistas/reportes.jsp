@@ -52,6 +52,8 @@
             ? (List<Map<String, Object>>) resumen.get("ventasPorMes") : null;
     List<Map<String, Object>> topClientes = resumen != null
             ? (List<Map<String, Object>>) resumen.get("topClientes") : null;
+    Map<String, Object> clienteMasRecurrente = resumen != null
+            ? (Map<String, Object>) resumen.get("clienteMasRecurrente") : null;
 %>
 <!DOCTYPE html>
 <html lang="es">
@@ -60,6 +62,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Reportes y Analítica | LUMYN</title>
     <link rel="stylesheet" href="<%= contexto %>/css/styles.css">
+    <script src="<%= contexto %>/js/pagination.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
@@ -116,6 +119,70 @@
         }
         .table-wrap {
             overflow-x: auto;
+        }
+        .recurrent-client-card {
+            background: linear-gradient(135deg, #171717 0%, #262626 70%, #2e1518 100%);
+            color: #ffffff;
+            border-radius: 14px;
+            padding: 20px 24px;
+            margin-bottom: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 18px;
+            box-shadow: var(--shadow);
+        }
+        .recurrent-client-tag {
+            display: inline-block;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #ff6b70;
+            margin-bottom: 6px;
+        }
+        .recurrent-client-name {
+            margin: 0 0 4px;
+            font-size: 20px;
+            font-weight: 800;
+            letter-spacing: -0.4px;
+            color: #ffffff;
+        }
+        .recurrent-client-meta {
+            font-size: 12px;
+            color: #cfcfcf;
+        }
+        .recurrent-client-metrics {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 14px;
+        }
+        .recurrent-metric {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 10px;
+            padding: 10px 14px;
+            min-width: 108px;
+        }
+        .recurrent-metric span {
+            display: block;
+            font-size: 10px;
+            color: #c7c7c7;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+        .recurrent-metric strong {
+            display: block;
+            font-size: 16px;
+            margin-top: 3px;
+            color: #ffffff;
+        }
+        .report-section .table-footer {
+            padding: 14px 4px 2px;
+            border-top: 1px solid var(--border);
+            margin-top: 8px;
         }
     </style>
 </head>
@@ -175,6 +242,40 @@
                     <p>Visualización interactiva con Apache ECharts y exportación a Excel (.xlsx).</p>
                 </div>
             </div>
+
+            <!-- Cliente más recurrente -->
+            <% if (clienteMasRecurrente != null) { %>
+            <div class="recurrent-client-card">
+                <div>
+                    <div class="recurrent-client-tag">★ Cliente más recurrente</div>
+                    <h2 class="recurrent-client-name"><%= esc(clienteMasRecurrente.get("nombre")) %></h2>
+                    <div class="recurrent-client-meta">
+                        Documento: <strong><%= esc(clienteMasRecurrente.get("documento")) %></strong>
+                        <% if (clienteMasRecurrente.get("correo") != null && !String.valueOf(clienteMasRecurrente.get("correo")).isBlank()) { %>
+                            · <%= esc(clienteMasRecurrente.get("correo")) %>
+                        <% } %>
+                    </div>
+                </div>
+                <div class="recurrent-client-metrics">
+                    <div class="recurrent-metric">
+                        <span>Ventas</span>
+                        <strong><%= clienteMasRecurrente.get("totalVentas") %></strong>
+                    </div>
+                    <div class="recurrent-metric">
+                        <span>Proyectos</span>
+                        <strong><%= clienteMasRecurrente.get("totalProyectos") %></strong>
+                    </div>
+                    <div class="recurrent-metric">
+                        <span>SOLPED</span>
+                        <strong><%= clienteMasRecurrente.get("totalSolped") %></strong>
+                    </div>
+                    <div class="recurrent-metric">
+                        <span>Facturado</span>
+                        <strong>S/ <%= String.format(java.util.Locale.US, "%,.2f", clienteMasRecurrente.get("montoFacturado") != null ? ((BigDecimal) clienteMasRecurrente.get("montoFacturado")).doubleValue() : 0.0) %></strong>
+                    </div>
+                </div>
+            </div>
+            <% } %>
 
             <!-- Gráficos Apache ECharts -->
             <div class="charts-grid">
@@ -250,6 +351,7 @@
                         </tbody>
                     </table>
                 </div>
+                <div class="table-footer" id="pagVentas"></div>
             </div>
 
             <!-- Reporte de Proyectos -->
@@ -295,6 +397,7 @@
                         </tbody>
                     </table>
                 </div>
+                <div class="table-footer" id="pagProyectos"></div>
             </div>
 
             <!-- Reporte de Clientes -->
@@ -344,6 +447,7 @@
                         </tbody>
                     </table>
                 </div>
+                <div class="table-footer" id="pagClientes"></div>
             </div>
 
             <!-- Reporte de SOLPED -->
@@ -391,6 +495,7 @@
                         </tbody>
                     </table>
                 </div>
+                <div class="table-footer" id="pagSolped"></div>
             </div>
 
             <!-- Reporte de Usuarios -->
@@ -438,6 +543,7 @@
                         </tbody>
                     </table>
                 </div>
+                <div class="table-footer" id="pagUsuarios"></div>
             </div>
 
             <!-- Bitácora Observer -->
@@ -482,20 +588,37 @@
                         </tbody>
                     </table>
                 </div>
+                <div class="table-footer" id="pagEventos"></div>
             </div>
         </section>
     </main>
 </div>
 
 <script>
+    const reportPagers = {};
+
+    function conTodasLasFilasVisibles(tableId, fn) {
+        const table = document.getElementById(tableId);
+        const rows = table ? Array.from(table.querySelectorAll('tbody tr')) : [];
+        rows.forEach(r => { r.style.display = ''; });
+        try {
+            fn(table);
+        } finally {
+            if (reportPagers[tableId]) {
+                reportPagers[tableId].render();
+            }
+        }
+    }
+
     function exportarExcel(tableId, fileName, sheetName) {
         if (typeof XLSX === 'undefined') {
             alert('No se pudo cargar la librería de exportación Excel.');
             return;
         }
-        const table = document.getElementById(tableId);
-        const workbook = XLSX.utils.table_to_book(table, { sheet: sheetName });
-        XLSX.writeFile(workbook, fileName);
+        conTodasLasFilasVisibles(tableId, function (table) {
+            const workbook = XLSX.utils.table_to_book(table, { sheet: sheetName });
+            XLSX.writeFile(workbook, fileName);
+        });
     }
 
     function exportarPDF(tableId, fileName, titulo) {
@@ -503,21 +626,43 @@
             alert('No se pudo cargar la librería de exportación PDF.');
             return;
         }
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
-        doc.setFontSize(15);
-        doc.text('Agencia LUMYN — ' + titulo, 40, 40);
-        doc.setFontSize(9);
-        doc.setTextColor(100);
-        doc.text('Generado: ' + new Date().toLocaleString('es-PE'), 40, 56);
-        doc.autoTable({
-            html: '#' + tableId,
-            startY: 70,
-            styles: { fontSize: 8, cellPadding: 4 },
-            headStyles: { fillColor: [30, 41, 59] }
+        conTodasLasFilasVisibles(tableId, function () {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+            doc.setFontSize(15);
+            doc.text('Agencia LUMYN — ' + titulo, 40, 40);
+            doc.setFontSize(9);
+            doc.setTextColor(100);
+            doc.text('Generado: ' + new Date().toLocaleString('es-PE'), 40, 56);
+            doc.autoTable({
+                html: '#' + tableId,
+                startY: 70,
+                styles: { fontSize: 8, cellPadding: 4 },
+                headStyles: { fillColor: [30, 41, 59] }
+            });
+            doc.save(fileName);
         });
-        doc.save(fileName);
     }
+
+    (function initReportPagination() {
+        if (!window.LumynPagination) return;
+        const tablas = [
+            { id: 'tablaVentas', footer: '#pagVentas', label: 'ventas' },
+            { id: 'tablaProyectos', footer: '#pagProyectos', label: 'proyectos' },
+            { id: 'tablaClientes', footer: '#pagClientes', label: 'clientes' },
+            { id: 'tablaSolped', footer: '#pagSolped', label: 'solicitudes' },
+            { id: 'tablaUsuarios', footer: '#pagUsuarios', label: 'usuarios' },
+            { id: 'tablaEventos', footer: '#pagEventos', label: 'eventos' }
+        ];
+        tablas.forEach(function (cfg) {
+            reportPagers[cfg.id] = window.LumynPagination.attachTable({
+                tbody: '#' + cfg.id + ' tbody',
+                footerEl: cfg.footer,
+                label: cfg.label,
+                pageSize: 10
+            });
+        });
+    })();
 
     (function renderCharts() {
         if (typeof echarts === 'undefined') return;

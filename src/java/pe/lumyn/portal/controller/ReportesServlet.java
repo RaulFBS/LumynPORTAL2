@@ -15,12 +15,33 @@ import pe.lumyn.portal.security.PermisosUtil;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 @WebServlet("/reportes")
 public class ReportesServlet extends HttpServlet {
 
     private final ReportesRepository reportesRepository =
             new ReportesRepositoryImpl();
+
+    private ExecutorService queryExecutor;
+
+    @Override
+    public void init() throws ServletException {
+        queryExecutor = Executors.newFixedThreadPool(6, runnable -> {
+            Thread t = new Thread(runnable, "lumyn-reportes-query");
+            t.setDaemon(true);
+            return t;
+        });
+    }
+
+    @Override
+    public void destroy() {
+        if (queryExecutor != null) {
+            queryExecutor.shutdownNow();
+        }
+    }
 
     @Override
     protected void doGet(
@@ -52,25 +73,68 @@ public class ReportesServlet extends HttpServlet {
         String fechaFin = request.getParameter("fechaFin");
 
         try {
-            Map<String, Object> resumen =
-                    reportesRepository.obtenerResumenGeneral();
-            List<Map<String, Object>> reporteVentas =
-                    reportesRepository.obtenerReporteVentas(fechaInicio, fechaFin);
-            List<Map<String, Object>> reporteProyectos =
-                    reportesRepository.obtenerReporteProyectos();
-            List<Map<String, Object>> reporteClientes =
-                    reportesRepository.obtenerReporteClientes();
-            List<Map<String, Object>> reporteSolped =
-                    reportesRepository.obtenerReporteSolped();
-            List<Map<String, Object>> reporteUsuarios =
-                    reportesRepository.obtenerReporteUsuarios();
+            CompletableFuture<Map<String, Object>> fResumen =
+                    CompletableFuture.supplyAsync(() -> {
+                        try {
+                            return reportesRepository.obtenerResumenGeneral();
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
+                    }, queryExecutor);
 
-            request.setAttribute("resumen", resumen);
-            request.setAttribute("reporteVentas", reporteVentas);
-            request.setAttribute("reporteProyectos", reporteProyectos);
-            request.setAttribute("reporteClientes", reporteClientes);
-            request.setAttribute("reporteSolped", reporteSolped);
-            request.setAttribute("reporteUsuarios", reporteUsuarios);
+            CompletableFuture<List<Map<String, Object>>> fVentas =
+                    CompletableFuture.supplyAsync(() -> {
+                        try {
+                            return reportesRepository.obtenerReporteVentas(fechaInicio, fechaFin);
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
+                    }, queryExecutor);
+
+            CompletableFuture<List<Map<String, Object>>> fProyectos =
+                    CompletableFuture.supplyAsync(() -> {
+                        try {
+                            return reportesRepository.obtenerReporteProyectos();
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
+                    }, queryExecutor);
+
+            CompletableFuture<List<Map<String, Object>>> fClientes =
+                    CompletableFuture.supplyAsync(() -> {
+                        try {
+                            return reportesRepository.obtenerReporteClientes();
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
+                    }, queryExecutor);
+
+            CompletableFuture<List<Map<String, Object>>> fSolped =
+                    CompletableFuture.supplyAsync(() -> {
+                        try {
+                            return reportesRepository.obtenerReporteSolped();
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
+                    }, queryExecutor);
+
+            CompletableFuture<List<Map<String, Object>>> fUsuarios =
+                    CompletableFuture.supplyAsync(() -> {
+                        try {
+                            return reportesRepository.obtenerReporteUsuarios();
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
+                    }, queryExecutor);
+
+            CompletableFuture.allOf(fResumen, fVentas, fProyectos, fClientes, fSolped, fUsuarios).join();
+
+            request.setAttribute("resumen", fResumen.join());
+            request.setAttribute("reporteVentas", fVentas.join());
+            request.setAttribute("reporteProyectos", fProyectos.join());
+            request.setAttribute("reporteClientes", fClientes.join());
+            request.setAttribute("reporteSolped", fSolped.join());
+            request.setAttribute("reporteUsuarios", fUsuarios.join());
             request.setAttribute("fechaInicio", fechaInicio != null ? fechaInicio : "");
             request.setAttribute("fechaFin", fechaFin != null ? fechaFin : "");
             request.setAttribute("rolId", session.getAttribute("rolId"));
