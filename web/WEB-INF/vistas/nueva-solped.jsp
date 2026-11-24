@@ -474,14 +474,16 @@
         ADMINISTRADOR: [
             {label: "Panel principal", icon: "▦", href: "dashboard"},
             {label: "Usuarios y roles", icon: "♙", href: "usuarios"},
-            {label: "Seguridad", icon: "◇", action: "seguridad"},
+            {label: "Seguridad", icon: "◇", href: "seguridad"},
             {label: "Clientes", icon: "♧", href: "clientes"},
             {label: "Proyectos", icon: "▣", href: "proyectos"},
             {label: "SOLPED / Cotizaciones", icon: "▤", href: "solped"},
             {label: "Ventas", icon: "S/", href: "ventas"},
-            {label: "Tareas", icon: "☷", action: "tareas"},
-            {label: "Entregables", icon: "▤", action: "entregables"},
-            {label: "Reportes", icon: "▥", action: "reportes"}
+            {label: "Tareas", icon: "☷", href: "tareas"},
+            {label: "Entregables", icon: "▤", href: "entregables"},
+            {label: "Reportes", icon: "▥", href: "reportes"},
+            {label: "Notificaciones", icon: "♧", href: "notificaciones"},
+            {label: "Observaciones", icon: "☷", href: "observaciones"}
         ],
         GESTOR: [
             {label: "Panel principal", icon: "▦", href: "dashboard"},
@@ -489,9 +491,11 @@
             {label: "Proyectos", icon: "▣", href: "proyectos"},
             {label: "SOLPED / Cotizaciones", icon: "▤", href: "solped"},
             {label: "Ventas", icon: "S/", href: "ventas"},
-            {label: "Tareas", icon: "☷", action: "tareas"},
-            {label: "Entregables", icon: "▤", action: "entregables"},
-            {label: "Reportes", icon: "▥", action: "reportes"}
+            {label: "Tareas", icon: "☷", href: "tareas"},
+            {label: "Entregables", icon: "▤", href: "entregables"},
+            {label: "Reportes", icon: "▥", href: "reportes"},
+            {label: "Notificaciones", icon: "♧", href: "notificaciones"},
+            {label: "Observaciones", icon: "☷", href: "observaciones"}
         ]
     };
 

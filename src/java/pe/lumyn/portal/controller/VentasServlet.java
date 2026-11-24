@@ -2,6 +2,8 @@
 package pe.lumyn.portal.controller;
 
 import pe.lumyn.portal.model.Venta;
+import pe.lumyn.portal.observer.PortalEvent;
+import pe.lumyn.portal.observer.PortalEventManager;
 import pe.lumyn.portal.repository.VentaRepository;
 import pe.lumyn.portal.repository.VentaRepositoryImpl;
 import pe.lumyn.portal.security.PermisosUtil;
@@ -136,6 +138,16 @@ public class VentasServlet extends HttpServlet {
                         "No se pudo convertir la SOLPED en venta."
                 );
             }
+
+            Integer usuarioId = session.getAttribute("usuarioId") instanceof Number
+                    ? ((Number) session.getAttribute("usuarioId")).intValue()
+                    : null;
+            PortalEventManager.getInstancia().notificar(new PortalEvent(
+                    "VENTA_REGISTRADA",
+                    solpedId,
+                    usuarioId,
+                    "SOLPED #" + solpedId + " convertida en venta"
+            ));
 
             response.sendRedirect(
         request.getContextPath()

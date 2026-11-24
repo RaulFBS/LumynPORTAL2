@@ -169,12 +169,10 @@
                     </a>
                     <% } %>
 
-                    <% if (rolId == 1 || rolId == 2 || rolId == 3 || rolId == 4) {%>
                     <a href="<%= contexto%>/entregables" class="nav-link">
                         <span class="nav-icon">▤</span>
                         <%= rolId == 4 ? "Revisión de entregables" : "Entregables"%>
                     </a>
-                    <% } %>
 
                     <% if (rolId == 1 || rolId == 2) {%>
                     <a href="<%= contexto%>/reportes" class="nav-link">
@@ -183,14 +181,12 @@
                     </a>
                     <% } %>
 
-                    <% if (rolId == 3) {%>
                     <a href="<%= contexto%>/notificaciones" class="nav-link">
                         <span class="nav-icon">♧</span>
                         Notificaciones
                     </a>
-                    <% } %>
 
-                    <% if (rolId == 4) {%>
+                    <% if (rolId == 1 || rolId == 2 || rolId == 4) {%>
                     <a href="<%= contexto%>/observaciones" class="nav-link">
                         <span class="nav-icon">☷</span>
                         Observaciones

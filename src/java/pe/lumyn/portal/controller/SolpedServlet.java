@@ -5,6 +5,8 @@ import pe.lumyn.portal.model.Cliente;
 import pe.lumyn.portal.model.Proyecto;
 import pe.lumyn.portal.model.Solped;
 import pe.lumyn.portal.model.SolpedDetalle;
+import pe.lumyn.portal.observer.PortalEvent;
+import pe.lumyn.portal.observer.PortalEventManager;
 import pe.lumyn.portal.repository.ClienteRepository;
 import pe.lumyn.portal.repository.ClienteRepositoryImpl;
 import pe.lumyn.portal.repository.ProyectoRepository;
@@ -314,6 +316,13 @@ public class SolpedServlet extends HttpServlet {
 
         int solpedId = solpedRepository.registrar(solped);
 
+        PortalEventManager.getInstancia().notificar(new PortalEvent(
+                "SOLPED_CREADA",
+                solpedId,
+                solped.getUsuarioId(),
+                "Solicitud SOLPED registrada para cliente #" + clienteId
+        ));
+
         response.sendRedirect(
                 request.getContextPath()
                 + "/solped?resultado=creada&id=" + solpedId
@@ -340,6 +349,19 @@ public class SolpedServlet extends HttpServlet {
 
         boolean actualizado =
                 solpedRepository.cambiarEstado(solpedId, estado);
+
+        if (actualizado) {
+            HttpSession session = request.getSession(false);
+            Integer usuarioId = session != null && session.getAttribute("usuarioId") instanceof Number
+                    ? ((Number) session.getAttribute("usuarioId")).intValue()
+                    : null;
+            PortalEventManager.getInstancia().notificar(new PortalEvent(
+                    "SOLPED_" + estado.toUpperCase(),
+                    solpedId,
+                    usuarioId,
+                    "Cambio de estado de SOLPED a " + estado
+            ));
+        }
 
         String resultado = actualizado
                 ? estado

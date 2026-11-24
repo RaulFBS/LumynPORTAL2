@@ -232,9 +232,8 @@
                 Usuarios y roles
             </a>
 
-            <a href="#"
-               class="nav-link"
-               onclick="showModuleNotice(event, 'Seguridad')">
+            <a href="<%= contexto %>/seguridad"
+               class="nav-link">
                 <span class="nav-icon">◇</span>
                 Seguridad
             </a>
@@ -255,13 +254,24 @@
                 Proyectos
             </a>
 
+            <a href="<%= contexto %>/solped"
+               class="nav-link">
+                <span class="nav-icon">▤</span>
+                SOLPED / Cotizaciones
+            </a>
+
+            <a href="<%= contexto %>/ventas"
+               class="nav-link">
+                <span class="nav-icon">S/</span>
+                Ventas
+            </a>
+
         <% } %>
 
         <% if (rolId == 1 || rolId == 2 || rolId == 3) { %>
 
-            <a href="#"
-               class="nav-link"
-               onclick="showModuleNotice(event, 'Tareas')">
+            <a href="<%= contexto %>/tareas"
+               class="nav-link">
                 <span class="nav-icon">☷</span>
                 Tareas
             </a>
@@ -270,9 +280,8 @@
 
         <% if (rolId >= 1 && rolId <= 4) { %>
 
-            <a href="#"
-               class="nav-link"
-               onclick="showModuleNotice(event, 'Entregables')">
+            <a href="<%= contexto %>/entregables"
+               class="nav-link">
                 <span class="nav-icon">▤</span>
                 Entregables
             </a>
@@ -281,11 +290,26 @@
 
         <% if (rolId == 1 || rolId == 2) { %>
 
-            <a href="#"
-               class="nav-link"
-               onclick="showModuleNotice(event, 'Reportes')">
+            <a href="<%= contexto %>/reportes"
+               class="nav-link">
                 <span class="nav-icon">▥</span>
                 Reportes
+            </a>
+
+        <% } %>
+
+            <a href="<%= contexto %>/notificaciones"
+               class="nav-link">
+                <span class="nav-icon">♧</span>
+                Notificaciones
+            </a>
+
+        <% if (rolId == 1 || rolId == 2 || rolId == 4) { %>
+
+            <a href="<%= contexto %>/observaciones"
+               class="nav-link">
+                <span class="nav-icon">☷</span>
+                Observaciones
             </a>
 
         <% } %>

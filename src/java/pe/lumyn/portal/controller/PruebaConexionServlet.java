@@ -2,6 +2,7 @@
 package pe.lumyn.portal.controller;
 
 import pe.lumyn.portal.config.ConexionBD;
+import pe.lumyn.portal.security.PermisosUtil;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.Connection;
@@ -11,6 +12,7 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 
 @WebServlet("/prueba-conexion")
 public class PruebaConexionServlet extends HttpServlet {
@@ -19,6 +21,21 @@ public class PruebaConexionServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request,
                          HttpServletResponse response)
             throws ServletException, IOException {
+
+        HttpSession session = request.getSession(false);
+
+        if (!PermisosUtil.tieneSesion(session)) {
+            response.sendRedirect(request.getContextPath() + "/login.html");
+            return;
+        }
+
+        if (!PermisosUtil.esAdministrador(session)) {
+            response.sendError(
+                    HttpServletResponse.SC_FORBIDDEN,
+                    "Solo el administrador puede ejecutar pruebas de conexión."
+            );
+            return;
+        }
 
         response.setContentType("text/html;charset=UTF-8");
 
