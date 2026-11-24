@@ -62,6 +62,8 @@
     <link rel="stylesheet" href="<%= contexto %>/css/styles.css">
     <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
     <style>
         .charts-grid {
             display: grid;
@@ -195,6 +197,12 @@
                         <button type="button" class="btn btn-primary" onclick="exportarExcel('tablaVentas', 'reporte_ventas.xlsx', 'Ventas')">
                             Descargar Excel
                         </button>
+                        <button type="button" class="btn btn-outline" onclick="exportarPDF('tablaVentas', 'reporte_ventas.pdf', 'Reporte de Ventas')">
+                            Descargar PDF
+                        </button>
+                        <a class="btn btn-outline" href="<%= contexto %>/reportes/exportar?tipo=ventas&amp;fechaInicio=<%= java.net.URLEncoder.encode(fechaInicio != null ? fechaInicio : "", "UTF-8") %>&amp;fechaFin=<%= java.net.URLEncoder.encode(fechaFin != null ? fechaFin : "", "UTF-8") %>">
+                            Descargar CSV
+                        </a>
                     </div>
                 </div>
                 <div class="table-wrap">
@@ -236,9 +244,17 @@
             <div class="report-section">
                 <div class="report-header">
                     <h2>Reporte de Proyectos</h2>
-                    <button type="button" class="btn btn-primary" onclick="exportarExcel('tablaProyectos', 'reporte_proyectos.xlsx', 'Proyectos')">
-                        Descargar Excel
-                    </button>
+                    <div class="filter-bar">
+                        <button type="button" class="btn btn-primary" onclick="exportarExcel('tablaProyectos', 'reporte_proyectos.xlsx', 'Proyectos')">
+                            Descargar Excel
+                        </button>
+                        <button type="button" class="btn btn-outline" onclick="exportarPDF('tablaProyectos', 'reporte_proyectos.pdf', 'Reporte de Proyectos')">
+                            Descargar PDF
+                        </button>
+                        <a class="btn btn-outline" href="<%= contexto %>/reportes/exportar?tipo=proyectos">
+                            Descargar CSV
+                        </a>
+                    </div>
                 </div>
                 <div class="table-wrap">
                     <table id="tablaProyectos" class="data-table">
@@ -273,9 +289,17 @@
             <div class="report-section">
                 <div class="report-header">
                     <h2>Reporte de Clientes</h2>
-                    <button type="button" class="btn btn-primary" onclick="exportarExcel('tablaClientes', 'reporte_clientes.xlsx', 'Clientes')">
-                        Descargar Excel
-                    </button>
+                    <div class="filter-bar">
+                        <button type="button" class="btn btn-primary" onclick="exportarExcel('tablaClientes', 'reporte_clientes.xlsx', 'Clientes')">
+                            Descargar Excel
+                        </button>
+                        <button type="button" class="btn btn-outline" onclick="exportarPDF('tablaClientes', 'reporte_clientes.pdf', 'Reporte de Clientes')">
+                            Descargar PDF
+                        </button>
+                        <a class="btn btn-outline" href="<%= contexto %>/reportes/exportar?tipo=clientes">
+                            Descargar CSV
+                        </a>
+                    </div>
                 </div>
                 <div class="table-wrap">
                     <table id="tablaClientes" class="data-table">
@@ -314,9 +338,17 @@
             <div class="report-section">
                 <div class="report-header">
                     <h2>Reporte de Solicitudes SOLPED</h2>
-                    <button type="button" class="btn btn-primary" onclick="exportarExcel('tablaSolped', 'reporte_solped.xlsx', 'SOLPED')">
-                        Descargar Excel
-                    </button>
+                    <div class="filter-bar">
+                        <button type="button" class="btn btn-primary" onclick="exportarExcel('tablaSolped', 'reporte_solped.xlsx', 'SOLPED')">
+                            Descargar Excel
+                        </button>
+                        <button type="button" class="btn btn-outline" onclick="exportarPDF('tablaSolped', 'reporte_solped.pdf', 'Reporte de Solicitudes SOLPED')">
+                            Descargar PDF
+                        </button>
+                        <a class="btn btn-outline" href="<%= contexto %>/reportes/exportar?tipo=solped">
+                            Descargar CSV
+                        </a>
+                    </div>
                 </div>
                 <div class="table-wrap">
                     <table id="tablaSolped" class="data-table">
@@ -353,9 +385,17 @@
             <div class="report-section">
                 <div class="report-header">
                     <h2>Reporte de Usuarios</h2>
-                    <button type="button" class="btn btn-primary" onclick="exportarExcel('tablaUsuarios', 'reporte_usuarios.xlsx', 'Usuarios')">
-                        Descargar Excel
-                    </button>
+                    <div class="filter-bar">
+                        <button type="button" class="btn btn-primary" onclick="exportarExcel('tablaUsuarios', 'reporte_usuarios.xlsx', 'Usuarios')">
+                            Descargar Excel
+                        </button>
+                        <button type="button" class="btn btn-outline" onclick="exportarPDF('tablaUsuarios', 'reporte_usuarios.pdf', 'Reporte de Usuarios')">
+                            Descargar PDF
+                        </button>
+                        <a class="btn btn-outline" href="<%= contexto %>/reportes/exportar?tipo=usuarios">
+                            Descargar CSV
+                        </a>
+                    </div>
                 </div>
                 <div class="table-wrap">
                     <table id="tablaUsuarios" class="data-table">
@@ -392,9 +432,14 @@
             <div class="report-section">
                 <div class="report-header">
                     <h2>Bitácora de Eventos (Patrón Observer)</h2>
-                    <button type="button" class="btn btn-primary" onclick="exportarExcel('tablaEventos', 'reporte_eventos_observer.xlsx', 'Eventos')">
-                        Descargar Excel
-                    </button>
+                    <div class="filter-bar">
+                        <button type="button" class="btn btn-primary" onclick="exportarExcel('tablaEventos', 'reporte_eventos_observer.xlsx', 'Eventos')">
+                            Descargar Excel
+                        </button>
+                        <button type="button" class="btn btn-outline" onclick="exportarPDF('tablaEventos', 'reporte_eventos_observer.pdf', 'Bitácora de Eventos (Observer)')">
+                            Descargar PDF
+                        </button>
+                    </div>
                 </div>
                 <div class="table-wrap">
                     <table id="tablaEventos" class="data-table">
@@ -439,6 +484,27 @@
         const table = document.getElementById(tableId);
         const workbook = XLSX.utils.table_to_book(table, { sheet: sheetName });
         XLSX.writeFile(workbook, fileName);
+    }
+
+    function exportarPDF(tableId, fileName, titulo) {
+        if (!window.jspdf || typeof window.jspdf.jsPDF === 'undefined') {
+            alert('No se pudo cargar la librería de exportación PDF.');
+            return;
+        }
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+        doc.setFontSize(15);
+        doc.text('Agencia LUMYN — ' + titulo, 40, 40);
+        doc.setFontSize(9);
+        doc.setTextColor(100);
+        doc.text('Generado: ' + new Date().toLocaleString('es-PE'), 40, 56);
+        doc.autoTable({
+            html: '#' + tableId,
+            startY: 70,
+            styles: { fontSize: 8, cellPadding: 4 },
+            headStyles: { fillColor: [30, 41, 59] }
+        });
+        doc.save(fileName);
     }
 
     (function renderCharts() {
