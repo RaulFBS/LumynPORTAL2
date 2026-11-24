@@ -57,27 +57,28 @@ public class UsuariosServlet extends HttpServlet {
             List<Usuario> usuarios =
                     usuarioRepository.listarTodos();
 
+            int total = usuarios.size();
+            int activos = 0;
+            int inactivos = 0;
+            int administradores = 0;
+
+            for (Usuario usuario : usuarios) {
+                String estado = usuario.getEstado();
+                if ("activo".equalsIgnoreCase(estado)) {
+                    activos++;
+                    if (usuario.getRolId() == 1) {
+                        administradores++;
+                    }
+                } else if ("inactivo".equalsIgnoreCase(estado)) {
+                    inactivos++;
+                }
+            }
+
             request.setAttribute("usuarios", usuarios);
-
-            request.setAttribute(
-                    "totalUsuarios",
-                    usuarioRepository.contarTodos()
-            );
-
-            request.setAttribute(
-                    "usuariosActivos",
-                    usuarioRepository.contarPorEstado("activo")
-            );
-
-            request.setAttribute(
-                    "usuariosInactivos",
-                    usuarioRepository.contarPorEstado("inactivo")
-            );
-
-            request.setAttribute(
-                    "administradoresActivos",
-                    usuarioRepository.contarAdministradoresActivos()
-            );
+            request.setAttribute("totalUsuarios", total);
+            request.setAttribute("usuariosActivos", activos);
+            request.setAttribute("usuariosInactivos", inactivos);
+            request.setAttribute("administradoresActivos", administradores);
 
             request.getRequestDispatcher(
                     "/WEB-INF/vistas/usuarios.html"

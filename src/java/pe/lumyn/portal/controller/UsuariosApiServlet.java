@@ -38,11 +38,22 @@ public class UsuariosApiServlet extends HttpServlet {
             List<Usuario> usuarios =
                     usuarioRepository.listarTodos();
 
-            int total = usuarioRepository.contarTodos();
-            int activos = usuarioRepository.contarPorEstado("activo");
-            int inactivos = usuarioRepository.contarPorEstado("inactivo");
-            int administradores =
-                    usuarioRepository.contarAdministradoresActivos();
+            int total = usuarios.size();
+            int activos = 0;
+            int inactivos = 0;
+            int administradores = 0;
+
+            for (Usuario usuario : usuarios) {
+                String estado = usuario.getEstado();
+                if ("activo".equalsIgnoreCase(estado)) {
+                    activos++;
+                    if (usuario.getRolId() == 1) {
+                        administradores++;
+                    }
+                } else if ("inactivo".equalsIgnoreCase(estado)) {
+                    inactivos++;
+                }
+            }
 
             StringBuilder json = new StringBuilder();
 
