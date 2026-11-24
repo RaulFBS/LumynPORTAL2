@@ -67,19 +67,31 @@
     <style>
         .charts-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+            grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: 18px;
             margin-bottom: 24px;
+        }
+        @media (max-width: 960px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
         }
         .chart-card {
             background: #ffffff;
             border: 1px solid #e5e7eb;
             border-radius: 12px;
-            padding: 16px;
+            padding: 18px;
+            min-width: 0;
+        }
+        .chart-card h3 {
+            margin: 0 0 10px;
+            font-size: 15px;
+            font-weight: 700;
+            color: #111827;
         }
         .chart-box {
             width: 100%;
-            height: 290px;
+            height: 310px;
         }
         .report-section {
             background: #ffffff;
@@ -542,40 +554,142 @@
             <% } } %>
         ];
 
+        const formatEstado = (texto) => {
+            if (!texto) return '';
+            const clean = String(texto).replace(/_/g, ' ');
+            return clean.charAt(0).toUpperCase() + clean.slice(1);
+        };
+
+        const formatMoneda = (valor) => {
+            return 'S/ ' + Number(valor || 0).toLocaleString('es-PE', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        };
+
         const c1 = echarts.init(document.getElementById('chartVentasMes'));
         c1.setOption({
-            tooltip: { trigger: 'axis' },
-            xAxis: { type: 'category', data: ventasMes.map(x => x.mes) },
-            yAxis: { type: 'value' },
-            series: [{ name: 'Ventas (S/)', type: 'bar', data: ventasMes.map(x => x.monto), itemStyle: { color: '#2563eb' } }]
+            tooltip: {
+                trigger: 'axis',
+                axisPointer: { type: 'shadow' },
+                valueFormatter: (val) => formatMoneda(val)
+            },
+            grid: { left: 16, right: 20, top: 24, bottom: 16, containLabel: true },
+            xAxis: {
+                type: 'category',
+                data: ventasMes.map(x => x.mes),
+                axisLabel: { interval: 0 }
+            },
+            yAxis: {
+                type: 'value',
+                axisLabel: {
+                    formatter: (val) => 'S/ ' + Number(val).toLocaleString('es-PE')
+                }
+            },
+            series: [{
+                name: 'Ventas',
+                type: 'bar',
+                barMaxWidth: 56,
+                data: ventasMes.map(x => x.monto),
+                itemStyle: { color: '#2563eb', borderRadius: [6, 6, 0, 0] }
+            }]
         });
 
         const c2 = echarts.init(document.getElementById('chartProyectosEstado'));
         c2.setOption({
-            tooltip: { trigger: 'item' },
-            legend: { bottom: 0 },
-            series: [{ type: 'pie', radius: ['40%', '70%'], data: proyectosEstado }]
+            tooltip: {
+                trigger: 'item',
+                formatter: '{b}: {c} ({d}%)'
+            },
+            legend: {
+                bottom: 0,
+                left: 'center',
+                type: 'scroll'
+            },
+            series: [{
+                name: 'Proyectos',
+                type: 'pie',
+                radius: ['38%', '60%'],
+                center: ['50%', '43%'],
+                avoidLabelOverlap: true,
+                itemStyle: {
+                    borderRadius: 6,
+                    borderColor: '#ffffff',
+                    borderWidth: 2
+                },
+                label: {
+                    formatter: '{b}: {c}'
+                },
+                data: proyectosEstado.map(x => ({
+                    name: formatEstado(x.name),
+                    value: x.value
+                }))
+            }]
         });
 
         const c3 = echarts.init(document.getElementById('chartSolpedEstado'));
         c3.setOption({
-            tooltip: { trigger: 'axis' },
-            xAxis: { type: 'category', data: solpedEstado.map(x => x.name) },
-            yAxis: { type: 'value' },
-            series: [{ name: 'SOLPED', type: 'bar', data: solpedEstado.map(x => x.value), itemStyle: { color: '#0d9488' } }]
+            tooltip: {
+                trigger: 'axis',
+                axisPointer: { type: 'shadow' }
+            },
+            grid: { left: 16, right: 20, top: 24, bottom: 16, containLabel: true },
+            xAxis: {
+                type: 'category',
+                data: solpedEstado.map(x => formatEstado(x.name)),
+                axisLabel: {
+                    interval: 0,
+                    rotate: solpedEstado.length > 4 ? 15 : 0
+                }
+            },
+            yAxis: {
+                type: 'value',
+                minInterval: 1
+            },
+            series: [{
+                name: 'SOLPED',
+                type: 'bar',
+                barMaxWidth: 48,
+                data: solpedEstado.map(x => x.value),
+                itemStyle: { color: '#0d9488', borderRadius: [6, 6, 0, 0] }
+            }]
         });
 
         const c4 = echarts.init(document.getElementById('chartTopClientes'));
         c4.setOption({
-            tooltip: { trigger: 'axis' },
-            grid: { left: 110 },
-            xAxis: { type: 'value' },
-            yAxis: { type: 'category', data: topClientes.map(x => x.cliente) },
-            series: [{ name: 'Facturación (S/)', type: 'bar', data: topClientes.map(x => x.monto), itemStyle: { color: '#7c3aed' } }]
+            tooltip: {
+                trigger: 'axis',
+                axisPointer: { type: 'shadow' },
+                valueFormatter: (val) => formatMoneda(val)
+            },
+            grid: { left: 16, right: 28, top: 20, bottom: 16, containLabel: true },
+            xAxis: {
+                type: 'value',
+                splitNumber: 4,
+                axisLabel: {
+                    formatter: (val) => 'S/ ' + Number(val).toLocaleString('es-PE')
+                }
+            },
+            yAxis: {
+                type: 'category',
+                data: topClientes.map(x => x.cliente),
+                axisLabel: {
+                    width: 160,
+                    overflow: 'truncate'
+                }
+            },
+            series: [{
+                name: 'Facturación',
+                type: 'bar',
+                barMaxWidth: 36,
+                data: topClientes.map(x => x.monto),
+                itemStyle: { color: '#7c3aed', borderRadius: [0, 6, 6, 0] }
+            }]
         });
 
+        const charts = [c1, c2, c3, c4];
         window.addEventListener('resize', () => {
-            c1.resize(); c2.resize(); c3.resize(); c4.resize();
+            charts.forEach(chart => chart.resize());
         });
     })();
 </script>
