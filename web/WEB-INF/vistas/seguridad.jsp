@@ -17,13 +17,14 @@
     }
     Object rolAttr = session.getAttribute("rolId");
     int rolId = rolAttr instanceof Number ? ((Number) rolAttr).intValue() : 1;
-    String rolNombre = switch (rolId) {
-        case 1 -> "Administrador";
-        case 2 -> "Gestor";
-        case 3 -> "Colaborador";
-        case 4 -> "Revisor";
-        default -> "Usuario";
-    };
+    String rolNombre;
+    switch (rolId) {
+        case 1: rolNombre = "Administrador"; break;
+        case 2: rolNombre = "Gestor"; break;
+        case 3: rolNombre = "Colaborador"; break;
+        case 4: rolNombre = "Revisor"; break;
+        default: rolNombre = "Usuario"; break;
+    }
     String[] partesNombre = nombreUsuario.trim().split("\\s+");
     String iniciales = partesNombre.length >= 2
             ? (partesNombre[0].substring(0, 1) + partesNombre[partesNombre.length - 1].substring(0, 1)).toUpperCase()
