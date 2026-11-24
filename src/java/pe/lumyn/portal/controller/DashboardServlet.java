@@ -3,6 +3,9 @@ package pe.lumyn.portal.controller;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -18,10 +21,23 @@ import pe.lumyn.portal.repository.DashboardRepositoryImpl;
 public class DashboardServlet extends HttpServlet {
 
     private DashboardRepository dashboardRepository;
+    private ExecutorService queryExecutor;
 
     @Override
     public void init() throws ServletException {
         dashboardRepository = new DashboardRepositoryImpl();
+        queryExecutor = Executors.newFixedThreadPool(4, runnable -> {
+            Thread t = new Thread(runnable, "lumyn-dashboard-query");
+            t.setDaemon(true);
+            return t;
+        });
+    }
+
+    @Override
+    public void destroy() {
+        if (queryExecutor != null) {
+            queryExecutor.shutdownNow();
+        }
     }
 
     @Override
@@ -91,23 +107,51 @@ public class DashboardServlet extends HttpServlet {
         }
 
         try {
-            List<Map<String, Object>> solpedRecientes
-                    = dashboardRepository.obtenerSolpedRecientes();
+            CompletableFuture<List<Map<String, Object>>> fSolped =
+                    CompletableFuture.supplyAsync(() -> {
+                        try {
+                            return dashboardRepository.obtenerSolpedRecientes();
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
+                    }, queryExecutor);
 
-            List<Map<String, Object>> ventasRecientes
-                    = dashboardRepository.obtenerVentasRecientes();
-            Map<String, Object> estadisticas
-                    = dashboardRepository.obtenerEstadisticas();
+            CompletableFuture<List<Map<String, Object>>> fVentas =
+                    CompletableFuture.supplyAsync(() -> {
+                        try {
+                            return dashboardRepository.obtenerVentasRecientes();
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
+                    }, queryExecutor);
 
-            List<Map<String, Object>> proyectos
-                    = dashboardRepository.obtenerProyectosRecientes();
-            request.setAttribute("solpedRecientes", solpedRecientes);
-            request.setAttribute("ventasRecientes", ventasRecientes);
+            CompletableFuture<Map<String, Object>> fStats =
+                    CompletableFuture.supplyAsync(() -> {
+                        try {
+                            return dashboardRepository.obtenerEstadisticas();
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
+                    }, queryExecutor);
+
+            CompletableFuture<List<Map<String, Object>>> fProyectos =
+                    CompletableFuture.supplyAsync(() -> {
+                        try {
+                            return dashboardRepository.obtenerProyectosRecientes();
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
+                    }, queryExecutor);
+
+            CompletableFuture.allOf(fSolped, fVentas, fStats, fProyectos).join();
+
+            request.setAttribute("solpedRecientes", fSolped.join());
+            request.setAttribute("ventasRecientes", fVentas.join());
             request.setAttribute("nombreUsuario", nombreUsuario);
             request.setAttribute("nombreRol", nombreRol);
             request.setAttribute("rolId", rolId);
-            request.setAttribute("estadisticas", estadisticas);
-            request.setAttribute("proyectos", proyectos);
+            request.setAttribute("estadisticas", fStats.join());
+            request.setAttribute("proyectos", fProyectos.join());
 
             request.getRequestDispatcher(
                     "/WEB-INF/vistas/dashboard.jsp"

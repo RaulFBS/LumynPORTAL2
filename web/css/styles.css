@@ -1260,3 +1260,72 @@ tbody tr:hover {
         align-items: flex-start;
     }
 }
+
+
+/* =========================
+   CONSISTENCIA DE FORMULARIOS Y TABLAS SECUNDARIAS
+========================= */
+
+.card h3 {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+    margin-bottom: 16px;
+}
+
+.card input[type="text"],
+.card input[type="email"],
+.card input[type="number"],
+.card input[type="date"],
+.card input[type="url"],
+.card select,
+.card textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    background: var(--white);
+    font-size: 13px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.card input:focus,
+.card select:focus,
+.card textarea:focus {
+    border-color: var(--red);
+    box-shadow: 0 0 0 3px rgba(217, 31, 38, 0.08);
+    outline: none;
+}
+
+.data-table input[type="text"],
+.data-table input[type="number"],
+.data-table select {
+    padding: 6px 9px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--white);
+    color: var(--text);
+    font-size: 12px;
+}
+
+.data-table input:focus,
+.data-table select:focus {
+    border-color: var(--red);
+    outline: none;
+}
+
+.data-table td small {
+    color: var(--muted);
+    font-size: 11px;
+}
+
+.data-table a {
+    color: var(--red);
+    font-weight: 600;
+    font-size: 12px;
+}
+
+.data-table a:hover {
+    text-decoration: underline;
+}

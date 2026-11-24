@@ -12,7 +12,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class SolpedRepositoryImpl implements SolpedRepository {
 
@@ -27,20 +30,61 @@ public class SolpedRepositoryImpl implements SolpedRepository {
             ORDER BY fecha_solicitud DESC, solped_id DESC
             """;
 
-        try (Connection conn = ConexionBD.getInstancia().conectar();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+        try (Connection conn = ConexionBD.getInstancia().conectar()) {
+            try (PreparedStatement ps = conn.prepareStatement(sql);
+                 ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    solicitudes.add(mapearSolped(rs));
+                }
+            }
 
-            while (rs.next()) {
-                Solped solped = mapearSolped(rs);
-                solped.setDetalles(
-                    listarDetalles(conn, solped.getSolpedId())
-                );
-                solicitudes.add(solped);
+            if (!solicitudes.isEmpty()) {
+                Map<Integer, List<SolpedDetalle>> detallesPorSolped =
+                        listarTodosDetallesAgrupados(conn);
+                for (Solped solped : solicitudes) {
+                    solped.setDetalles(
+                            detallesPorSolped.getOrDefault(
+                                    solped.getSolpedId(),
+                                    Collections.emptyList()
+                            )
+                    );
+                }
             }
         }
 
         return solicitudes;
+    }
+
+    private Map<Integer, List<SolpedDetalle>> listarTodosDetallesAgrupados(
+            Connection conn) throws SQLException {
+
+        Map<Integer, List<SolpedDetalle>> mapa = new HashMap<>();
+
+        String sql = """
+            SELECT solped_detalle_id, solped_id, servicio,
+                   descripcion, cantidad, precio_unitario, subtotal
+            FROM solped_detalle
+            ORDER BY solped_id, solped_detalle_id
+            """;
+
+        try (PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                SolpedDetalle detalle = new SolpedDetalle();
+                detalle.setSolpedDetalleId(rs.getInt("solped_detalle_id"));
+                int solpedId = rs.getInt("solped_id");
+                detalle.setSolpedId(solpedId);
+                detalle.setServicio(rs.getString("servicio"));
+                detalle.setDescripcion(rs.getString("descripcion"));
+                detalle.setCantidad(rs.getBigDecimal("cantidad"));
+                detalle.setPrecioUnitario(rs.getBigDecimal("precio_unitario"));
+                detalle.setSubtotal(rs.getBigDecimal("subtotal"));
+
+                mapa.computeIfAbsent(solpedId, k -> new ArrayList<>()).add(detalle);
+            }
+        }
+
+        return mapa;
     }
 
     @Override

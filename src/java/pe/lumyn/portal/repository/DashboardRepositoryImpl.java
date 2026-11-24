@@ -19,11 +19,11 @@ public class DashboardRepositoryImpl implements DashboardRepository {
 
         Map<String, Object> estadisticas = new LinkedHashMap<>();
 
-        String sqlClientes =
-                "SELECT COUNT(*) AS total FROM clientes";
-
-        String sqlProyectos =
-                "SELECT COUNT(*) AS total FROM proyectos";
+        String sqlResumen =
+                "SELECT (SELECT COUNT(*) FROM clientes) AS total_clientes, " +
+                "COUNT(*) AS total_ventas, " +
+                "COALESCE(SUM(total), 0) AS importe_ventas " +
+                "FROM ventas WHERE estado <> 'anulada'";
 
         String sqlEstados =
                 "SELECT estado, COUNT(*) AS total " +
@@ -33,86 +33,47 @@ public class DashboardRepositoryImpl implements DashboardRepository {
                 "SELECT estado, COUNT(*) AS total " +
                 "FROM solped GROUP BY estado";
 
-        String sqlTotalSolped =
-                "SELECT COUNT(*) AS total FROM solped";
-
-        String sqlVentas =
-                "SELECT COUNT(*) AS total, " +
-                "COALESCE(SUM(total), 0) AS importe " +
-                "FROM ventas " +
-                "WHERE estado <> 'anulada'";
-
         try (Connection conexion =
                      ConexionBD.getInstancia().conectar()) {
 
             try (PreparedStatement ps =
-                         conexion.prepareStatement(sqlClientes);
+                         conexion.prepareStatement(sqlResumen);
                  ResultSet rs = ps.executeQuery()) {
 
                 if (rs.next()) {
-                    estadisticas.put(
-                            "totalClientes", rs.getInt("total"));
+                    estadisticas.put("totalClientes", rs.getInt("total_clientes"));
+                    estadisticas.put("totalVentas", rs.getInt("total_ventas"));
+                    estadisticas.put("importeVentas", rs.getBigDecimal("importe_ventas"));
                 }
             }
 
-            try (PreparedStatement ps =
-                         conexion.prepareStatement(sqlProyectos);
-                 ResultSet rs = ps.executeQuery()) {
-
-                if (rs.next()) {
-                    estadisticas.put(
-                            "totalProyectos", rs.getInt("total"));
-                }
-            }
-
+            int totalProyectos = 0;
             try (PreparedStatement ps =
                          conexion.prepareStatement(sqlEstados);
                  ResultSet rs = ps.executeQuery()) {
 
                 while (rs.next()) {
                     String estado = rs.getString("estado");
-
-                    estadisticas.put(
-                            "proyectos_" + estado,
-                            rs.getInt("total"));
+                    int count = rs.getInt("total");
+                    totalProyectos += count;
+                    estadisticas.put("proyectos_" + estado, count);
                 }
             }
+            estadisticas.put("totalProyectos", totalProyectos);
 
-            try (PreparedStatement ps =
-                         conexion.prepareStatement(sqlTotalSolped);
-                 ResultSet rs = ps.executeQuery()) {
-
-                if (rs.next()) {
-                    estadisticas.put(
-                            "totalSolped", rs.getInt("total"));
-                }
-            }
-
+            int totalSolped = 0;
             try (PreparedStatement ps =
                          conexion.prepareStatement(sqlSolped);
                  ResultSet rs = ps.executeQuery()) {
 
                 while (rs.next()) {
                     String estado = rs.getString("estado");
-
-                    estadisticas.put(
-                            "solped_" + estado,
-                            rs.getInt("total"));
+                    int count = rs.getInt("total");
+                    totalSolped += count;
+                    estadisticas.put("solped_" + estado, count);
                 }
             }
-
-            try (PreparedStatement ps =
-                         conexion.prepareStatement(sqlVentas);
-                 ResultSet rs = ps.executeQuery()) {
-
-                if (rs.next()) {
-                    estadisticas.put(
-                            "totalVentas", rs.getInt("total"));
-
-                    estadisticas.put(
-                            "importeVentas", rs.getBigDecimal("importe"));
-                }
-            }
+            estadisticas.put("totalSolped", totalSolped);
         }
 
         // Valores por defecto para evitar indicadores vacíos.

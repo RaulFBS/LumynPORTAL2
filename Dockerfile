@@ -12,6 +12,7 @@ RUN rm -rf /usr/local/tomcat/webapps/examples /usr/local/tomcat/webapps/docs /us
     && rm -rf /tmp/base.war /tmp/WEB-INF \
     && find /app/src -name "*.java" > /app/sources.txt \
     && javac -encoding UTF-8 -cp "/usr/local/tomcat/lib/*:/usr/local/tomcat/webapps/ROOT/WEB-INF/lib/*" -d /usr/local/tomcat/webapps/ROOT/WEB-INF/classes @/app/sources.txt \
+    && sed -i 's|<Connector port="8080" protocol="HTTP/1.1"|<Connector port="8080" protocol="HTTP/1.1" compression="on" compressionMinSize="1024" compressibleMimeType="text/html,text/xml,text/plain,text/css,text/javascript,application/javascript,application/json,image/svg+xml"|' /usr/local/tomcat/conf/server.xml \
     && rm -rf /app
 
 EXPOSE 8080
