@@ -1,5 +1,7 @@
 
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ page import="java.net.URLEncoder" %>
+<%@ page import="java.nio.charset.StandardCharsets" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.text.SimpleDateFormat" %>
 <%@ page import="pe.lumyn.portal.model.Cliente" %>
@@ -13,6 +15,16 @@
                     .replace(">", "&gt;")
                     .replace("\"", "&quot;")
                     .replace("'", "&#39;");
+    }
+
+    private String construirUrlPagina(String contexto, int pagina, int tamano, String busqueda) {
+        StringBuilder sb = new StringBuilder(contexto)
+                .append("/clientes?page=").append(pagina)
+                .append("&size=").append(tamano);
+        if (busqueda != null && !busqueda.isBlank()) {
+            sb.append("&q=").append(URLEncoder.encode(busqueda, StandardCharsets.UTF_8));
+        }
+        return sb.toString();
     }
 %>
 
@@ -95,18 +107,39 @@
         iniciales = nombreUsuario.substring(0, 1).toUpperCase();
     }
 
-    int activos = 0;
-    int conCorreo = 0;
+    Integer totalClientesAttr = (Integer) request.getAttribute("totalClientes");
+    Integer activosAttr = (Integer) request.getAttribute("clientesActivos");
+    Integer conCorreoAttr = (Integer) request.getAttribute("clientesConCorreo");
+    Integer totalFiltradosAttr = (Integer) request.getAttribute("totalFiltrados");
+    Integer paginaActualAttr = (Integer) request.getAttribute("paginaActual");
+    Integer tamanoPaginaAttr = (Integer) request.getAttribute("tamanoPagina");
+    Integer totalPaginasAttr = (Integer) request.getAttribute("totalPaginas");
+    String busquedaActual = (String) request.getAttribute("busqueda");
+    if (busquedaActual == null) {
+        busquedaActual = "";
+    }
 
-    for (Cliente c : clientes) {
-        if ("activo".equalsIgnoreCase(c.getEstado())) {
-            activos++;
-        }
+    int totalClientes = totalClientesAttr != null ? totalClientesAttr : clientes.size();
+    int activos = activosAttr != null ? activosAttr : 0;
+    int conCorreo = conCorreoAttr != null ? conCorreoAttr : 0;
+    int totalFiltrados = totalFiltradosAttr != null ? totalFiltradosAttr : clientes.size();
+    int paginaActual = paginaActualAttr != null ? paginaActualAttr : 1;
+    int tamanoPagina = tamanoPaginaAttr != null ? tamanoPaginaAttr : 10;
+    int totalPaginas = totalPaginasAttr != null ? totalPaginasAttr : 1;
 
-        if (c.getCorreo() != null && !c.getCorreo().isBlank()) {
-            conCorreo++;
+    if (activosAttr == null || conCorreoAttr == null) {
+        for (Cliente c : clientes) {
+            if (activosAttr == null && "activo".equalsIgnoreCase(c.getEstado())) {
+                activos++;
+            }
+            if (conCorreoAttr == null && c.getCorreo() != null && !c.getCorreo().isBlank()) {
+                conCorreo++;
+            }
         }
     }
+
+    int inicioRango = totalFiltrados == 0 ? 0 : ((paginaActual - 1) * tamanoPagina) + 1;
+    int finRango = totalFiltrados == 0 ? 0 : Math.min(inicioRango + clientes.size() - 1, totalFiltrados);
 %>
 
 <!DOCTYPE html>
@@ -183,10 +216,100 @@
         .client-filter {
             padding: 15px 19px;
             border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .client-filter-form {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            width: 100%;
+            justify-content: space-between;
+        }
+
+        .client-filter-left {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            flex: 1;
+            min-width: 240px;
+        }
+
+        .client-filter-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: var(--muted);
         }
 
         .client-filter .form-control {
-            max-width: 360px;
+            max-width: 340px;
+        }
+
+        .client-page-size {
+            width: auto;
+            padding: 8px 12px;
+            font-size: 12px;
+        }
+
+        .client-table-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .pagination {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .page-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 32px;
+            height: 32px;
+            padding: 0 10px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--white);
+            color: var(--text);
+            font-size: 12px;
+            font-weight: 600;
+            transition: background-color 0.15s, border-color 0.15s, color 0.15s;
+        }
+
+        .page-link:hover:not(.disabled):not(.active) {
+            background: #F4F4F1;
+            border-color: #D4D4CF;
+        }
+
+        .page-link.active {
+            background: var(--red);
+            border-color: var(--red);
+            color: var(--white);
+        }
+
+        .page-link.disabled {
+            opacity: 0.45;
+            pointer-events: none;
+        }
+
+        .page-ellipsis {
+            padding: 0 4px;
+            color: var(--muted);
+            font-size: 12px;
         }
 
         .client-modal-form .form-grid {
@@ -201,6 +324,11 @@
             .client-filter .form-control {
                 max-width: none;
                 width: 100%;
+            }
+
+            .client-table-footer {
+                flex-direction: column;
+                align-items: flex-start;
             }
         }
     </style>
@@ -407,7 +535,7 @@
                 <div class="stat-card">
                     <div class="stat-symbol">♧</div>
                     <div class="stat-title">Total de clientes</div>
-                    <div class="stat-value"><%= clientes.size() %></div>
+                    <div class="stat-value"><%= totalClientes %></div>
                     <div class="stat-foot">Clientes registrados</div>
                 </div>
 
@@ -428,7 +556,7 @@
                 <div class="stat-card">
                     <div class="stat-symbol">⊘</div>
                     <div class="stat-title">Inactivos</div>
-                    <div class="stat-value"><%= clientes.size() - activos %></div>
+                    <div class="stat-value"><%= Math.max(0, totalClientes - activos) %></div>
                     <div class="stat-foot">Clientes desactivados</div>
                 </div>
 
@@ -461,13 +589,52 @@
 
                 <div class="client-filter">
 
-                    <input
-                        type="search"
-                        class="form-control search-input"
-                        id="searchClients"
-                        placeholder="Buscar por nombre, documento o correo..."
-                        aria-label="Buscar clientes"
-                    >
+                    <form method="get"
+                          action="<%= contexto %>/clientes"
+                          class="client-filter-form"
+                          id="filterClientsForm">
+
+                        <input type="hidden" name="page" value="1">
+
+                        <div class="client-filter-left">
+                            <input
+                                type="search"
+                                class="form-control search-input"
+                                id="searchClients"
+                                name="q"
+                                value="<%= escapar(busquedaActual) %>"
+                                placeholder="Buscar por nombre, documento, correo o teléfono..."
+                                aria-label="Buscar clientes"
+                            >
+
+                            <button type="submit" class="btn btn-outline btn-small">
+                                Buscar
+                            </button>
+
+                            <% if (!busquedaActual.isBlank()) { %>
+                                <a href="<%= contexto %>/clientes?size=<%= tamanoPagina %>"
+                                   class="btn btn-outline btn-small">
+                                    Limpiar
+                                </a>
+                            <% } %>
+                        </div>
+
+                        <div class="client-filter-right">
+                            <label for="pageSizeSelect">Mostrar</label>
+                            <select id="pageSizeSelect"
+                                    name="size"
+                                    class="form-control client-page-size"
+                                    aria-label="Registros por página"
+                                    onchange="this.form.submit()">
+                                <option value="5" <%= tamanoPagina == 5 ? "selected" : "" %>>5</option>
+                                <option value="10" <%= tamanoPagina == 10 ? "selected" : "" %>>10</option>
+                                <option value="20" <%= tamanoPagina == 20 ? "selected" : "" %>>20</option>
+                                <option value="50" <%= tamanoPagina == 50 ? "selected" : "" %>>50</option>
+                            </select>
+                            <span>por página</span>
+                        </div>
+
+                    </form>
 
                 </div>
 
@@ -493,7 +660,9 @@
                                 <tr id="emptyClientsRow">
                                     <td colspan="6">
                                         <div class="client-empty">
-                                            Todavía no hay clientes registrados.
+                                            <%= busquedaActual.isBlank()
+                                                ? "Todavía no hay clientes registrados."
+                                                : "No se encontraron clientes para \"" + escapar(busquedaActual) + "\"." %>
                                         </div>
                                     </td>
                                 </tr>
@@ -620,6 +789,10 @@
                                                            value="<%= "activo".equalsIgnoreCase(estadoCliente)
                                                                ? "inactivo" : "activo" %>">
 
+                                                    <input type="hidden" name="page" value="<%= paginaActual %>">
+                                                    <input type="hidden" name="size" value="<%= tamanoPagina %>">
+                                                    <input type="hidden" name="q" value="<%= escapar(busquedaActual) %>">
+
                                                     <button type="submit"
                                                             class="btn btn-small <%= 
                                                                 "activo".equalsIgnoreCase(estadoCliente)
@@ -649,8 +822,66 @@
 
                 </div>
 
-                <div class="table-footer" id="tableCount">
-                    Mostrando <%= clientes.size() %> clientes
+                <div class="table-footer client-table-footer">
+                    <div id="tableCount">
+                        <% if (totalFiltrados == 0) { %>
+                            Mostrando 0 clientes
+                        <% } else { %>
+                            Mostrando <%= inicioRango %>–<%= finRango %> de <%= totalFiltrados %> clientes
+                            (Página <%= paginaActual %> de <%= totalPaginas %>)
+                        <% } %>
+                    </div>
+
+                    <% if (totalPaginas > 1) { %>
+                        <nav class="pagination" aria-label="Paginación de clientes">
+                            <a class="page-link <%= paginaActual <= 1 ? "disabled" : "" %>"
+                               href="<%= construirUrlPagina(contexto, Math.max(1, paginaActual - 1), tamanoPagina, busquedaActual) %>"
+                               aria-label="Página anterior">
+                                « Anterior
+                            </a>
+
+                            <%
+                                int ventanaInicio = Math.max(1, paginaActual - 2);
+                                int ventanaFin = Math.min(totalPaginas, paginaActual + 2);
+
+                                if (ventanaInicio > 1) {
+                            %>
+                                <a class="page-link"
+                                   href="<%= construirUrlPagina(contexto, 1, tamanoPagina, busquedaActual) %>">1</a>
+                                <% if (ventanaInicio > 2) { %>
+                                    <span class="page-ellipsis">…</span>
+                                <% } %>
+                            <%
+                                }
+
+                                for (int p = ventanaInicio; p <= ventanaFin; p++) {
+                            %>
+                                <a class="page-link <%= p == paginaActual ? "active" : "" %>"
+                                   href="<%= construirUrlPagina(contexto, p, tamanoPagina, busquedaActual) %>"
+                                   <%= p == paginaActual ? "aria-current=\"page\"" : "" %>>
+                                    <%= p %>
+                                </a>
+                            <%
+                                }
+
+                                if (ventanaFin < totalPaginas) {
+                                    if (ventanaFin < totalPaginas - 1) {
+                            %>
+                                    <span class="page-ellipsis">…</span>
+                                <% } %>
+                                <a class="page-link"
+                                   href="<%= construirUrlPagina(contexto, totalPaginas, tamanoPagina, busquedaActual) %>"><%= totalPaginas %></a>
+                            <%
+                                }
+                            %>
+
+                            <a class="page-link <%= paginaActual >= totalPaginas ? "disabled" : "" %>"
+                               href="<%= construirUrlPagina(contexto, Math.min(totalPaginas, paginaActual + 1), tamanoPagina, busquedaActual) %>"
+                               aria-label="Página siguiente">
+                                Siguiente »
+                            </a>
+                        </nav>
+                    <% } %>
                 </div>
 
             </section>
@@ -692,6 +923,10 @@
                    id="accion"
                    name="accion"
                    value="guardar">
+
+            <input type="hidden" name="page" value="<%= paginaActual %>">
+            <input type="hidden" name="size" value="<%= tamanoPagina %>">
+            <input type="hidden" name="q" value="<%= escapar(busquedaActual) %>">
 
             <div class="form-grid">
 
@@ -935,44 +1170,14 @@
         }
     });
 
-    document.getElementById("searchClients")
-        .addEventListener("input", function () {
-            const busqueda = this.value.toLowerCase().trim();
-
-            const filas = document.querySelectorAll(".client-row");
-
-            let visibles = 0;
-
-            filas.forEach(function (fila) {
-                const nombre =
-                    (fila.dataset.nombre || "").toLowerCase();
-
-                const documento =
-                    (fila.dataset.documento || "").toLowerCase();
-
-                const correo =
-                    (fila.dataset.correo || "").toLowerCase();
-
-                const telefono =
-                    (fila.dataset.telefono || "").toLowerCase();
-
-                const coincide =
-                    nombre.includes(busqueda) ||
-                    documento.includes(busqueda) ||
-                    correo.includes(busqueda) ||
-                    telefono.includes(busqueda);
-
-                fila.style.display = coincide ? "" : "none";
-
-                if (coincide) {
-                    visibles++;
-                }
-            });
-
-            document.getElementById("tableCount").textContent =
-                "Mostrando " + visibles + " de "
-                + filas.length + " clientes";
+    const searchClientsInput = document.getElementById("searchClients");
+    if (searchClientsInput) {
+        searchClientsInput.addEventListener("search", function () {
+            if (this.value.trim() === "" && window.location.search.includes("q=")) {
+                document.getElementById("filterClientsForm").submit();
+            }
         });
+    }
 
     clientForm.addEventListener("submit", function (event) {
         const nombre =
@@ -1004,10 +1209,16 @@
     if (resultado === "ok") {
         showToast("La operación se procesó correctamente.");
 
+        parametros.delete("resultado");
+        const queryLimpia = parametros.toString();
+        const nuevaUrl = queryLimpia
+            ? window.location.pathname + "?" + queryLimpia
+            : window.location.pathname;
+
         window.history.replaceState(
             {},
             document.title,
-            window.location.pathname
+            nuevaUrl
         );
     }
 </script>

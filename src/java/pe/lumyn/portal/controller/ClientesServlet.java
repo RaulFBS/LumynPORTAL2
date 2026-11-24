@@ -7,6 +7,8 @@ import pe.lumyn.portal.repository.ClienteRepositoryImpl;
 import pe.lumyn.portal.security.PermisosUtil;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import jakarta.servlet.ServletException;
@@ -19,8 +21,37 @@ import jakarta.servlet.http.HttpSession;
 @WebServlet("/clientes")
 public class ClientesServlet extends HttpServlet {
 
+    private static final int TAMANO_PAGINA_DEFECTO = 10;
+
     private final ClienteRepository clienteRepository =
             new ClienteRepositoryImpl();
+
+    private int parsearTamanoPagina(String valor) {
+        if (valor == null || valor.isBlank()) {
+            return TAMANO_PAGINA_DEFECTO;
+        }
+        try {
+            int parsed = Integer.parseInt(valor.trim());
+            if (parsed == 5 || parsed == 10 || parsed == 20 || parsed == 50) {
+                return parsed;
+            }
+        } catch (NumberFormatException ignored) {
+            // Usar valor por defecto si el parámetro no es válido.
+        }
+        return TAMANO_PAGINA_DEFECTO;
+    }
+
+    private int parsearPagina(String valor) {
+        if (valor == null || valor.isBlank()) {
+            return 1;
+        }
+        try {
+            int parsed = Integer.parseInt(valor.trim());
+            return Math.max(parsed, 1);
+        } catch (NumberFormatException ignored) {
+            return 1;
+        }
+    }
 
     private boolean tienePermisoGestionarClientes(
             HttpSession session) {
@@ -62,14 +93,41 @@ public class ClientesServlet extends HttpServlet {
         }
 
         try {
-            List<Cliente> clientes =
-                    clienteRepository.listarTodos();
+            String busqueda = valorParametro(request, "q");
+            int tamanoPagina = parsearTamanoPagina(request.getParameter("size"));
+            int paginaSolicitada = parsearPagina(request.getParameter("page"));
+
+            int[] resumen = clienteRepository.obtenerResumenEstadisticas();
+            int totalClientes = resumen[0];
+            int clientesActivos = resumen[1];
+            int clientesConCorreo = resumen[2];
+
+            int totalFiltrados = busqueda.isBlank()
+                    ? totalClientes
+                    : clienteRepository.contarFiltrados(busqueda);
+
+            int totalPaginas = Math.max(
+                    1,
+                    (int) Math.ceil((double) totalFiltrados / tamanoPagina)
+            );
+            int paginaActual = Math.min(paginaSolicitada, totalPaginas);
+            int desplazamiento = (paginaActual - 1) * tamanoPagina;
+
+            List<Cliente> clientes = clienteRepository.listarPaginado(
+                    busqueda,
+                    tamanoPagina,
+                    desplazamiento
+            );
 
             request.setAttribute("clientes", clientes);
-            request.setAttribute(
-                    "totalClientes",
-                    clientes.size()
-            );
+            request.setAttribute("totalClientes", totalClientes);
+            request.setAttribute("clientesActivos", clientesActivos);
+            request.setAttribute("clientesConCorreo", clientesConCorreo);
+            request.setAttribute("totalFiltrados", totalFiltrados);
+            request.setAttribute("paginaActual", paginaActual);
+            request.setAttribute("tamanoPagina", tamanoPagina);
+            request.setAttribute("totalPaginas", totalPaginas);
+            request.setAttribute("busqueda", busqueda);
 
             request.getRequestDispatcher(
                     "/WEB-INF/vistas/clientes.jsp"
@@ -141,10 +199,26 @@ public class ClientesServlet extends HttpServlet {
                     return;
             }
 
-            response.sendRedirect(
-                    request.getContextPath()
-                    + "/clientes?resultado=ok"
-            );
+            StringBuilder redirectUrl = new StringBuilder(request.getContextPath())
+                    .append("/clientes?resultado=ok");
+
+            String pageParam = valorParametro(request, "page");
+            String sizeParam = valorParametro(request, "size");
+            String qParam = valorParametro(request, "q");
+
+            if (!"guardar".equals(accion) && !pageParam.isBlank()) {
+                redirectUrl.append("&page=").append(parsearPagina(pageParam));
+            }
+            if (!sizeParam.isBlank()) {
+                redirectUrl.append("&size=").append(parsearTamanoPagina(sizeParam));
+            }
+            if (!qParam.isBlank()) {
+                redirectUrl.append("&q=").append(
+                        URLEncoder.encode(qParam, StandardCharsets.UTF_8)
+                );
+            }
+
+            response.sendRedirect(redirectUrl.toString());
 
         } catch (IllegalArgumentException e) {
             response.sendError(

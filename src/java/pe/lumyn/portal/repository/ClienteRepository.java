@@ -8,6 +8,12 @@ public interface ClienteRepository {
 
     List<Cliente> listarTodos() throws Exception;
 
+    List<Cliente> listarPaginado(String busqueda, int limite, int desplazamiento) throws Exception;
+
+    int contarFiltrados(String busqueda) throws Exception;
+
+    int[] obtenerResumenEstadisticas() throws Exception;
+
     Cliente buscarPorId(int clienteId) throws Exception;
 
     boolean guardar(Cliente cliente) throws Exception;

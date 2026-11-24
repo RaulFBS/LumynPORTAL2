@@ -50,6 +50,131 @@ public class ClienteRepositoryImpl implements ClienteRepository {
     }
 
     @Override
+    public List<Cliente> listarPaginado(
+            String busqueda,
+            int limite,
+            int desplazamiento) throws Exception {
+
+        List<Cliente> clientes = new ArrayList<>();
+        boolean tieneBusqueda = busqueda != null && !busqueda.isBlank();
+
+        String sql = tieneBusqueda
+                ? """
+                  SELECT cliente_id, nombre, documento, correo,
+                         telefono, direccion, estado, fecha_registro
+                  FROM clientes
+                  WHERE LOWER(nombre) LIKE ?
+                     OR LOWER(COALESCE(documento, '')) LIKE ?
+                     OR LOWER(COALESCE(correo, '')) LIKE ?
+                     OR LOWER(COALESCE(telefono, '')) LIKE ?
+                  ORDER BY cliente_id DESC
+                  LIMIT ? OFFSET ?
+                  """
+                : """
+                  SELECT cliente_id, nombre, documento, correo,
+                         telefono, direccion, estado, fecha_registro
+                  FROM clientes
+                  ORDER BY cliente_id DESC
+                  LIMIT ? OFFSET ?
+                  """;
+
+        try (Connection conn = ConexionBD.getInstancia().conectar();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            int idx = 1;
+            if (tieneBusqueda) {
+                String patron = "%" + busqueda.trim().toLowerCase() + "%";
+                ps.setString(idx++, patron);
+                ps.setString(idx++, patron);
+                ps.setString(idx++, patron);
+                ps.setString(idx++, patron);
+            }
+            ps.setInt(idx++, limite);
+            ps.setInt(idx, desplazamiento);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Cliente cliente = new Cliente();
+                    cliente.setClienteId(rs.getInt("cliente_id"));
+                    cliente.setNombre(rs.getString("nombre"));
+                    cliente.setDocumento(rs.getString("documento"));
+                    cliente.setCorreo(rs.getString("correo"));
+                    cliente.setTelefono(rs.getString("telefono"));
+                    cliente.setDireccion(rs.getString("direccion"));
+                    cliente.setEstado(rs.getString("estado"));
+                    cliente.setFechaRegistro(rs.getTimestamp("fecha_registro"));
+                    clientes.add(cliente);
+                }
+            }
+        }
+
+        return clientes;
+    }
+
+    @Override
+    public int contarFiltrados(String busqueda) throws Exception {
+
+        boolean tieneBusqueda = busqueda != null && !busqueda.isBlank();
+
+        String sql = tieneBusqueda
+                ? """
+                  SELECT COUNT(*) AS total
+                  FROM clientes
+                  WHERE LOWER(nombre) LIKE ?
+                     OR LOWER(COALESCE(documento, '')) LIKE ?
+                     OR LOWER(COALESCE(correo, '')) LIKE ?
+                     OR LOWER(COALESCE(telefono, '')) LIKE ?
+                  """
+                : "SELECT COUNT(*) AS total FROM clientes";
+
+        try (Connection conn = ConexionBD.getInstancia().conectar();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            if (tieneBusqueda) {
+                String patron = "%" + busqueda.trim().toLowerCase() + "%";
+                ps.setString(1, patron);
+                ps.setString(2, patron);
+                ps.setString(3, patron);
+                ps.setString(4, patron);
+            }
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt("total");
+                }
+            }
+        }
+
+        return 0;
+    }
+
+    @Override
+    public int[] obtenerResumenEstadisticas() throws Exception {
+
+        String sql = """
+                SELECT COUNT(*) AS total,
+                       COALESCE(SUM(CASE WHEN LOWER(estado) = 'activo' THEN 1 ELSE 0 END), 0) AS activos,
+                       COALESCE(SUM(CASE WHEN correo IS NOT NULL AND TRIM(correo) <> '' THEN 1 ELSE 0 END), 0) AS con_correo
+                FROM clientes
+                """;
+
+        try (Connection conn = ConexionBD.getInstancia().conectar();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            if (rs.next()) {
+                return new int[]{
+                        rs.getInt("total"),
+                        rs.getInt("activos"),
+                        rs.getInt("con_correo")
+                };
+            }
+        }
+
+        return new int[]{0, 0, 0};
+    }
+
+    @Override
     public Cliente buscarPorId(int clienteId) throws Exception {
 
         String sql = """
